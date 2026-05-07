@@ -1,0 +1,1149 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Nurse Shift Board</title>
+    <style>
+      :root {
+        --bg: #f4efe7;
+        --bg-alt: #f7f2ea;
+        --panel: rgba(255, 255, 255, 0.72);
+        --panel-strong: #fffaf3;
+        --ink: #18202a;
+        --muted: #66707b;
+        --line: rgba(24, 32, 42, 0.12);
+        --shadow: 0 18px 60px rgba(40, 26, 8, 0.12);
+        --day: #f2b134;
+        --evening: #f07b5d;
+        --night: #355c7d;
+        --off: #b9c1c9;
+        --accent: #1c7c7a;
+        --accent-2: #d94f70;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      html,
+      body {
+        margin: 0;
+        min-height: 100%;
+        background:
+          radial-gradient(circle at top left, rgba(217, 79, 112, 0.14), transparent 35%),
+          radial-gradient(circle at top right, rgba(28, 124, 122, 0.13), transparent 28%),
+          linear-gradient(180deg, var(--bg) 0%, var(--bg-alt) 100%);
+        color: var(--ink);
+        font-family: "Iowan Old Style", "Palatino Linotype", "Book Antiqua", Georgia, serif;
+      }
+
+      body {
+        padding: 24px;
+      }
+
+      .app {
+        max-width: 1280px;
+        margin: 0 auto;
+      }
+
+      .shell {
+        display: grid;
+        grid-template-columns: 320px minmax(0, 1fr);
+        gap: 18px;
+      }
+
+      .hero {
+        grid-column: 1 / -1;
+        display: flex;
+        justify-content: space-between;
+        align-items: end;
+        gap: 16px;
+        padding: 24px 24px 8px;
+      }
+
+      .eyebrow {
+        letter-spacing: 0.18em;
+        text-transform: uppercase;
+        font: 700 12px/1.2 system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        color: var(--accent);
+      }
+
+      h1 {
+        margin: 8px 0 10px;
+        font-size: clamp(34px, 5vw, 58px);
+        line-height: 0.95;
+        letter-spacing: -0.05em;
+      }
+
+      .lead {
+        margin: 0;
+        max-width: 56ch;
+        color: var(--muted);
+        font: 500 15px/1.6 system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      }
+
+      .status-pill {
+        align-self: start;
+        padding: 10px 14px;
+        border: 1px solid var(--line);
+        border-radius: 999px;
+        background: rgba(255, 255, 255, 0.56);
+        box-shadow: var(--shadow);
+        color: var(--ink);
+        font: 700 12px/1 system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      }
+
+      .panel {
+        border: 1px solid var(--line);
+        border-radius: 28px;
+        background: var(--panel);
+        backdrop-filter: blur(16px);
+        box-shadow: var(--shadow);
+      }
+
+      .sidebar {
+        padding: 18px;
+        display: grid;
+        gap: 16px;
+        align-content: start;
+      }
+
+      .section-title {
+        margin: 0 0 10px;
+        font: 700 12px/1.2 system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        text-transform: uppercase;
+        letter-spacing: 0.16em;
+        color: var(--muted);
+      }
+
+      .card {
+        padding: 16px;
+        border-radius: 22px;
+        background: rgba(255, 255, 255, 0.62);
+        border: 1px solid rgba(24, 32, 42, 0.08);
+      }
+
+      .team-list {
+        display: grid;
+        gap: 10px;
+      }
+
+      .member-row {
+        display: flex;
+        gap: 8px;
+        align-items: stretch;
+      }
+
+      .member {
+        flex: 1;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 10px;
+        padding: 12px 14px;
+        border: 1px solid rgba(24, 32, 42, 0.08);
+        border-radius: 16px;
+        background: rgba(255, 255, 255, 0.76);
+        color: var(--ink);
+        cursor: pointer;
+        text-align: left;
+        transition: transform 0.15s ease, border-color 0.15s ease, background 0.15s ease;
+        font: 600 14px/1.2 system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      }
+
+      .member-delete {
+        width: 42px;
+        border: 1px solid rgba(24, 32, 42, 0.08);
+        border-radius: 16px;
+        background: rgba(255, 255, 255, 0.76);
+        color: #9d4b4b;
+        cursor: pointer;
+        font: 800 16px/1 system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      }
+
+      .member:hover {
+        transform: translateY(-1px);
+        border-color: rgba(28, 124, 122, 0.35);
+      }
+
+      .member.is-active {
+        background: rgba(28, 124, 122, 0.1);
+        border-color: rgba(28, 124, 122, 0.42);
+      }
+
+      .member small {
+        color: var(--muted);
+        font-weight: 500;
+      }
+
+      .row {
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+      }
+
+      input,
+      button,
+      textarea {
+        font: inherit;
+      }
+
+      .field {
+        width: 100%;
+        padding: 12px 14px;
+        border: 1px solid rgba(24, 32, 42, 0.12);
+        border-radius: 16px;
+        background: rgba(255, 255, 255, 0.88);
+        color: var(--ink);
+        outline: none;
+      }
+
+      .field:focus {
+        border-color: rgba(28, 124, 122, 0.55);
+        box-shadow: 0 0 0 4px rgba(28, 124, 122, 0.12);
+      }
+
+      .btn {
+        border: 0;
+        border-radius: 16px;
+        padding: 12px 14px;
+        cursor: pointer;
+        font: 700 14px/1 system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        transition: transform 0.15s ease, box-shadow 0.15s ease, opacity 0.15s ease;
+      }
+
+      .btn:hover {
+        transform: translateY(-1px);
+      }
+
+      .btn-primary {
+        color: white;
+        background: linear-gradient(135deg, var(--accent), #14535a);
+        box-shadow: 0 12px 22px rgba(28, 124, 122, 0.22);
+      }
+
+      .btn-secondary {
+        color: var(--ink);
+        background: rgba(255, 255, 255, 0.84);
+        border: 1px solid rgba(24, 32, 42, 0.09);
+      }
+
+      .btn-ghost {
+        color: var(--muted);
+        background: transparent;
+      }
+
+      .content {
+        padding: 18px;
+        display: grid;
+        gap: 16px;
+      }
+
+      .topbar {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 16px;
+        flex-wrap: wrap;
+      }
+
+      .month-title {
+        margin: 0;
+        font-size: 28px;
+        letter-spacing: -0.04em;
+      }
+
+      .subtle {
+        margin: 4px 0 0;
+        color: var(--muted);
+        font: 500 14px/1.5 system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      }
+
+      .calendar {
+        display: grid;
+        gap: 8px;
+      }
+
+      .weekday-grid,
+      .day-grid {
+        display: grid;
+        grid-template-columns: repeat(7, minmax(0, 1fr));
+        gap: 6px;
+      }
+
+      .weekday {
+        color: var(--muted);
+        font: 700 12px/1 system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        text-transform: uppercase;
+        letter-spacing: 0.12em;
+        padding: 0 10px;
+      }
+
+      .day {
+        min-height: 110px;
+        padding: 10px;
+        border-radius: 20px;
+        border: 1px solid rgba(24, 32, 42, 0.09);
+        background: rgba(255, 255, 255, 0.68);
+        text-align: left;
+        cursor: pointer;
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        position: relative;
+        overflow: hidden;
+        transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease;
+      }
+
+      .day:hover {
+        transform: translateY(-1px);
+        border-color: rgba(28, 124, 122, 0.3);
+        box-shadow: 0 12px 24px rgba(44, 38, 28, 0.08);
+      }
+
+      .day.is-muted {
+        opacity: 0.42;
+      }
+
+      .day.is-selected {
+        border-color: rgba(28, 124, 122, 0.7);
+        box-shadow: 0 0 0 4px rgba(28, 124, 122, 0.09);
+      }
+
+      .day-number {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        font: 700 15px/1 system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      }
+
+      .day-badge {
+        align-self: flex-start;
+        padding: 7px 10px;
+        border-radius: 999px;
+        color: white;
+        font: 700 12px/1 system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        letter-spacing: 0.02em;
+      }
+
+      .badge-day { background: var(--day); color: #2f250f; }
+      .badge-evening { background: var(--evening); }
+      .badge-night { background: var(--night); }
+      .badge-off { background: var(--off); color: #25303a; }
+
+      .calendar-note {
+        margin-top: auto;
+        color: var(--muted);
+        font: 500 12px/1.4 system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      }
+
+      .details {
+        display: grid;
+        gap: 12px;
+      }
+
+      .detail-head {
+        display: flex;
+        justify-content: space-between;
+        gap: 16px;
+        align-items: center;
+        flex-wrap: wrap;
+      }
+
+      .detail-title {
+        margin: 0;
+        font-size: 24px;
+        letter-spacing: -0.04em;
+      }
+
+      .shift-pills {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 10px;
+      }
+
+      .shift-btn {
+        padding: 14px 12px;
+        border-radius: 18px;
+        border: 1px solid rgba(24, 32, 42, 0.08);
+        background: rgba(255, 255, 255, 0.86);
+        color: var(--ink);
+        cursor: pointer;
+        font: 800 13px/1 system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      }
+
+      .shift-btn.is-active {
+        border-color: rgba(28, 124, 122, 0.55);
+        box-shadow: 0 0 0 4px rgba(28, 124, 122, 0.08);
+      }
+
+      .shift-btn[data-shift="day"] { color: #8a5b00; }
+      .shift-btn[data-shift="evening"] { color: #a93e29; }
+      .shift-btn[data-shift="night"] { color: #244460; }
+      .shift-btn[data-shift="off"] { color: #5c6974; }
+
+      .stats {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 10px;
+      }
+
+      .stat {
+        padding: 14px;
+        border-radius: 18px;
+        background: rgba(255, 255, 255, 0.74);
+        border: 1px solid rgba(24, 32, 42, 0.08);
+      }
+
+      .stat strong {
+        display: block;
+        font-size: 24px;
+        line-height: 1;
+      }
+
+      .stat span {
+        display: block;
+        margin-top: 8px;
+        color: var(--muted);
+        font: 600 12px/1.2 system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        text-transform: uppercase;
+        letter-spacing: 0.12em;
+      }
+
+      .share-box {
+        display: grid;
+        gap: 10px;
+      }
+
+      .toast {
+        min-height: 20px;
+        color: var(--accent);
+        font: 700 13px/1.4 system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      }
+
+      .empty {
+        padding: 18px;
+        border: 1px dashed rgba(24, 32, 42, 0.16);
+        border-radius: 18px;
+        background: rgba(255, 255, 255, 0.5);
+        color: var(--muted);
+        font: 500 14px/1.5 system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      }
+
+      .calendar-empty {
+        grid-column: 1 / -1;
+        padding: 18px;
+        border: 1px dashed rgba(24, 32, 42, 0.16);
+        border-radius: 20px;
+        background: rgba(255, 255, 255, 0.5);
+        color: var(--muted);
+        font: 500 14px/1.5 system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      }
+
+      @media (max-width: 1080px) {
+        .shell {
+          grid-template-columns: 1fr;
+        }
+
+        .weekday-grid,
+        .day-grid {
+          gap: 6px;
+        }
+      }
+
+      @media (max-width: 720px) {
+        body {
+          padding: 6px;
+        }
+
+        .hero {
+          padding: 6px 4px 2px;
+        }
+
+        .content,
+        .sidebar {
+          padding: 8px;
+        }
+
+        .calendar {
+          gap: 2px;
+        }
+
+        .weekday-grid {
+          gap: 2px;
+          margin-bottom: 2px;
+        }
+
+        .weekday {
+          padding: 0 2px;
+          font-size: 10px;
+          letter-spacing: 0.06em;
+        }
+
+        .day-grid {
+          gap: 2px;
+          grid-template-columns: repeat(7, minmax(0, 1fr));
+        }
+
+        .day {
+          min-height: 64px;
+          padding: 6px 4px;
+          border-radius: 10px;
+          gap: 3px;
+        }
+
+        .day-number {
+          font-size: 12px;
+        }
+
+        .day-badge {
+          padding: 4px 5px;
+          font-size: 9px;
+        }
+
+        .stats {
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+
+        .shift-pills {
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+
+        .subtle {
+          font-size: 13px;
+        }
+
+        .month-title {
+          font-size: 24px;
+        }
+
+        .detail-title {
+          font-size: 20px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="app">
+      <div class="hero">
+        <div>
+          <div class="eyebrow">Prototype for nurses</div>
+          <h1>Nurse Shift Board</h1>
+          <p class="lead">Day, Evening, Night, OFF. 빠르게 기록하고, 달력으로 보고, 링크 하나로 서로 공유하는 첫 프로토타입입니다.</p>
+        </div>
+        <div class="status-pill" id="statusPill">LOCAL PROTOTYPE</div>
+      </div>
+
+      <div class="shell">
+        <aside class="panel sidebar">
+          <section class="card">
+            <div class="section-title">Team</div>
+            <div class="row" style="margin-bottom: 12px">
+              <input id="memberName" class="field" placeholder="예: 지은" />
+              <button class="btn btn-primary" id="addMemberBtn">추가</button>
+            </div>
+            <div class="team-list" id="teamList"></div>
+          </section>
+
+          <section class="card">
+            <div class="section-title">Quick Share</div>
+            <div class="share-box">
+              <button class="btn btn-primary" id="shareBtn">공유 링크 만들기</button>
+              <button class="btn btn-secondary" id="copyBtn">링크 복사</button>
+              <textarea id="shareLink" class="field" rows="4" placeholder="공유 링크가 여기 표시돼요" readonly></textarea>
+              <div class="row">
+                <input id="importLink" class="field" placeholder="공유 링크 붙여넣기" />
+                <button class="btn btn-secondary" id="importBtn">불러오기</button>
+              </div>
+              <div class="toast" id="toast"></div>
+            </div>
+          </section>
+
+          <section class="card">
+            <div class="section-title">How it works</div>
+            <div class="empty">
+              1. 사람 추가<br />
+              2. 시작 날짜 클릭<br />
+              3. 아래 듀티를 순서대로 누르기<br />
+              4. 링크로 공유
+            </div>
+          </section>
+        </aside>
+
+        <main class="panel content">
+          <div class="topbar">
+            <div>
+              <p class="section-title" style="margin-bottom: 6px">Calendar</p>
+              <h2 class="month-title" id="monthLabel">-</h2>
+              <p class="subtle" id="monthHint">-</p>
+            </div>
+            <div class="row">
+              <button class="btn btn-secondary" id="prevMonthBtn">이전 달</button>
+              <button class="btn btn-secondary" id="todayBtn">오늘</button>
+              <button class="btn btn-secondary" id="nextMonthBtn">다음 달</button>
+            </div>
+          </div>
+
+          <section class="calendar">
+            <div class="weekday-grid" id="weekdayGrid"></div>
+            <div class="day-grid" id="dayGrid"></div>
+          </section>
+
+          <section class="card details">
+            <div class="detail-head">
+              <div>
+                <p class="section-title">Edit shift</p>
+                <h3 class="detail-title" id="selectedLabel">-</h3>
+              </div>
+              <div class="row">
+                <button class="btn btn-ghost" id="clearBtn">선택 취소</button>
+                <button class="btn btn-secondary" id="clearAllBtn">전체 삭제</button>
+              </div>
+            </div>
+
+            <div class="shift-pills" id="shiftButtons"></div>
+
+            <div class="stats" id="stats"></div>
+          </section>
+        </main>
+      </div>
+    </div>
+
+    <script>
+      const STORAGE_KEY = "nurse-shift-board:v1";
+      const SHIFT_LABELS = {
+        day: "Day",
+        evening: "Evening",
+        night: "Night",
+        off: "OFF",
+      };
+      const SHIFT_CLASS = {
+        day: "badge-day",
+        evening: "badge-evening",
+        night: "badge-night",
+        off: "badge-off",
+      };
+      const SHIFT_ORDER = ["day", "evening", "night", "off"];
+      const WEEKDAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+      const dom = {
+        teamList: document.getElementById("teamList"),
+        memberName: document.getElementById("memberName"),
+        addMemberBtn: document.getElementById("addMemberBtn"),
+        shareBtn: document.getElementById("shareBtn"),
+        copyBtn: document.getElementById("copyBtn"),
+        shareLink: document.getElementById("shareLink"),
+        importLink: document.getElementById("importLink"),
+        importBtn: document.getElementById("importBtn"),
+        toast: document.getElementById("toast"),
+        monthLabel: document.getElementById("monthLabel"),
+        monthHint: document.getElementById("monthHint"),
+        prevMonthBtn: document.getElementById("prevMonthBtn"),
+        todayBtn: document.getElementById("todayBtn"),
+        nextMonthBtn: document.getElementById("nextMonthBtn"),
+        weekdayGrid: document.getElementById("weekdayGrid"),
+        dayGrid: document.getElementById("dayGrid"),
+        selectedLabel: document.getElementById("selectedLabel"),
+        shiftButtons: document.getElementById("shiftButtons"),
+        stats: document.getElementById("stats"),
+        clearBtn: document.getElementById("clearBtn"),
+        clearAllBtn: document.getElementById("clearAllBtn"),
+        statusPill: document.getElementById("statusPill"),
+      };
+
+      const now = new Date();
+      const storage = createStorage();
+      const state = loadState() ?? {
+        members: [{ id: crypto.randomUUID(), name: "민지" }],
+        activeMemberId: null,
+        currentMonth: now.getMonth(),
+        currentYear: now.getFullYear(),
+        selectedDate: isoDate(new Date(now.getFullYear(), now.getMonth(), now.getDate())),
+        shiftsByMember: {},
+      };
+
+      if (!state.activeMemberId && state.members.length) {
+        state.activeMemberId = state.members[0].id;
+      }
+      if (!state.shiftsByMember) {
+        state.shiftsByMember = {};
+      }
+      syncVisibleMonthToSelection();
+
+      let lastSeenDate = isoDate(new Date());
+
+      renderWeekdays();
+      syncHashLoad();
+      renderAll();
+      startAutoRefresh();
+
+      dom.addMemberBtn.addEventListener("click", addMember);
+      dom.memberName.addEventListener("keydown", (event) => {
+        if (event.key === "Enter") addMember();
+      });
+      dom.shareBtn.addEventListener("click", createShareLink);
+      dom.copyBtn.addEventListener("click", copyShareLink);
+      dom.importBtn.addEventListener("click", importShareLink);
+      dom.prevMonthBtn.addEventListener("click", () => shiftMonth(-1));
+      dom.nextMonthBtn.addEventListener("click", () => shiftMonth(1));
+      dom.todayBtn.addEventListener("click", goToToday);
+      dom.clearBtn.addEventListener("click", () => {
+        state.selectedDate = null;
+        renderAll();
+      });
+      dom.clearAllBtn.addEventListener("click", clearAllShifts);
+
+      function renderAll() {
+        saveState();
+        renderTeam();
+        renderCalendar();
+        renderSelected();
+        renderStats();
+        updateSharePreview();
+        updateStatus();
+      }
+
+      function startAutoRefresh() {
+        window.setInterval(() => {
+          const today = isoDate(new Date());
+          if (today === lastSeenDate) return;
+
+          lastSeenDate = today;
+          setSelectedDate(today);
+
+          setToast("새 날짜로 갱신했어요.");
+          renderAll();
+        }, 60 * 1000);
+      }
+
+      function renderWeekdays() {
+        dom.weekdayGrid.innerHTML = WEEKDAYS.map((day) => `<div class="weekday">${day}</div>`).join("");
+      }
+
+      function renderTeam() {
+        const html = state.members.map((member) => {
+          const active = member.id === state.activeMemberId;
+          const count = countShifts(member.id);
+          return `
+            <div class="member-row">
+              <button class="member ${active ? "is-active" : ""}" data-member-id="${member.id}">
+                <span>${escapeHtml(member.name)}</span>
+                <small>${count} shifts</small>
+              </button>
+              <button class="member-delete" data-delete-member-id="${member.id}" aria-label="${escapeHtml(member.name)} 삭제">×</button>
+            </div>
+          `;
+        });
+        dom.teamList.innerHTML = html.join("") || '<div class="empty">아직 팀원이 없어요.</div>';
+
+        dom.teamList.querySelectorAll("[data-member-id]").forEach((button) => {
+          button.addEventListener("click", () => {
+            state.activeMemberId = button.dataset.memberId;
+            renderAll();
+          });
+        });
+
+        dom.teamList.querySelectorAll("[data-delete-member-id]").forEach((button) => {
+          button.addEventListener("click", (event) => {
+            event.stopPropagation();
+            deleteMember(button.dataset.deleteMemberId);
+          });
+        });
+      }
+
+      function renderCalendar() {
+        const member = activeMember();
+        if (!member) {
+          dom.monthLabel.textContent = "팀원이 없어요";
+          dom.monthHint.textContent = "먼저 팀원을 추가하면 달력을 사용할 수 있어요.";
+          dom.dayGrid.innerHTML = `<div class="calendar-empty">팀원을 추가한 뒤 시작해 주세요.</div>`;
+          return;
+        }
+
+        const { year, month } = getVisibleMonth();
+        const firstOfMonth = new Date(year, month, 1);
+        const startDay = firstOfMonth.getDay();
+        const daysInMonth = new Date(year, month + 1, 0).getDate();
+        const prevMonthDays = new Date(year, month, 0).getDate();
+        const totalCells = Math.ceil((startDay + daysInMonth) / 7) * 7;
+
+        dom.monthLabel.textContent = firstOfMonth.toLocaleDateString("ko-KR", { year: "numeric", month: "long" });
+        dom.monthHint.textContent = `${member.name}의 ${daysInMonth}일 기록을 한 화면에 볼 수 있어요.`;
+
+        const cells = [];
+        for (let index = 0; index < totalCells; index += 1) {
+          const dayNumber = index - startDay + 1;
+          let date;
+          let muted = false;
+
+          if (dayNumber < 1) {
+            date = new Date(year, month - 1, prevMonthDays + dayNumber);
+            muted = true;
+          } else if (dayNumber > daysInMonth) {
+            date = new Date(year, month + 1, dayNumber - daysInMonth);
+            muted = true;
+          } else {
+            date = new Date(year, month, dayNumber);
+          }
+
+          const iso = isoDate(date);
+          const shift = getShift(member.id, iso);
+          const isSelected = state.selectedDate === iso;
+          const isToday = iso === isoDate(new Date());
+          cells.push(`
+            <button class="day ${muted ? "is-muted" : ""} ${isSelected ? "is-selected" : ""}" data-date="${iso}">
+              <div class="day-number">
+                <span>${date.getDate()}</span>
+                <span style="color:${isToday ? "var(--accent)" : "var(--muted)"}">${isToday ? "Today" : ""}</span>
+              </div>
+              ${shift ? `<div class="day-badge ${SHIFT_CLASS[shift]}">${SHIFT_LABELS[shift]}</div>` : ""}
+            </button>
+          `);
+        }
+
+        dom.dayGrid.innerHTML = cells.join("");
+        dom.dayGrid.querySelectorAll("[data-date]").forEach((button) => {
+          button.addEventListener("click", () => {
+            setSelectedDate(button.dataset.date);
+            renderAll();
+            setToast("시작 날짜를 선택했어요.");
+          });
+        });
+      }
+
+      function renderSelected() {
+        const member = activeMember();
+        if (!member) {
+          dom.selectedLabel.textContent = "팀원을 추가해 주세요";
+          dom.shiftButtons.innerHTML = renderShiftButtons();
+          dom.shiftButtons.querySelectorAll("[data-shift]").forEach((button) => {
+            button.addEventListener("click", () => {
+              setToast("먼저 팀원을 추가해 주세요.");
+            });
+          });
+          return;
+        }
+
+        const dateLabel = state.selectedDate ? formatFullDate(state.selectedDate) : "날짜를 선택해 주세요";
+        dom.selectedLabel.textContent = state.selectedDate
+          ? `${member.name} · 시작 날짜 ${dateLabel}`
+          : `${member.name} · 시작 날짜를 선택해 주세요`;
+        dom.shiftButtons.innerHTML = renderShiftButtons();
+        dom.shiftButtons.querySelectorAll("[data-shift]").forEach((button) => {
+          button.addEventListener("click", () => {
+            const targetDate = state.selectedDate ?? isoDate(new Date());
+            setShift(member.id, targetDate, button.dataset.shift);
+            setSelectedDate(addDays(targetDate, 1));
+            renderAll();
+            setToast(`${SHIFT_LABELS[button.dataset.shift]}를 순차 입력했어요.`);
+          });
+        });
+      }
+
+      function renderStats() {
+        const member = activeMember();
+        if (!member) {
+          dom.stats.innerHTML = '<div class="empty" style="grid-column:1/-1">팀원을 추가하면 통계가 보입니다.</div>';
+          return;
+        }
+        const stats = SHIFT_ORDER.map((shift) => {
+          const total = countShifts(member.id, shift);
+          return `
+            <div class="stat">
+              <strong>${total}</strong>
+              <span>${SHIFT_LABELS[shift]}</span>
+            </div>
+          `;
+        });
+        dom.stats.innerHTML = stats.join("");
+      }
+
+      function clearAllShifts() {
+        const member = activeMember();
+        if (!member) {
+          setToast("팀원을 먼저 추가해 주세요.");
+          return;
+        }
+        const confirmed = window.confirm(`${member.name}의 모든 듀티를 삭제할까요?`);
+        if (!confirmed) return;
+
+        state.shiftsByMember[member.id] = {};
+        renderAll();
+        setToast("모든 듀티를 삭제했어요.");
+      }
+
+      function renderShiftButtons() {
+        return SHIFT_ORDER.map((shift) => `
+          <button class="shift-btn" data-shift="${shift}">
+            ${SHIFT_LABELS[shift]}
+          </button>
+        `).join("");
+      }
+
+      function addMember() {
+        const name = dom.memberName.value.trim();
+        if (!name) return;
+        const member = { id: crypto.randomUUID(), name };
+        state.members.push(member);
+        state.activeMemberId = member.id;
+        dom.memberName.value = "";
+        renderAll();
+      }
+
+      function deleteMember(memberId) {
+        const member = state.members.find((item) => item.id === memberId);
+        if (!member) return;
+        const confirmed = window.confirm(`${member.name} 팀을 지울까요? 이 사람의 듀티도 같이 삭제됩니다.`);
+        if (!confirmed) return;
+
+        state.members = state.members.filter((item) => item.id !== memberId);
+        delete state.shiftsByMember[memberId];
+
+        if (state.activeMemberId === memberId) {
+          state.activeMemberId = state.members[0]?.id ?? null;
+        }
+
+        if (state.members.length === 0) {
+          state.selectedDate = null;
+        }
+
+        renderAll();
+        setToast("팀을 삭제했어요.");
+      }
+
+      function shiftMonth(delta) {
+        const next = new Date(state.currentYear, state.currentMonth + delta, 1);
+        state.currentYear = next.getFullYear();
+        state.currentMonth = next.getMonth();
+        renderAll();
+      }
+
+      function goToToday() {
+        const today = new Date();
+        setSelectedDate(isoDate(today));
+        renderAll();
+      }
+
+      function createShareLink() {
+        const url = new URL(location.href);
+        url.hash = `s=${encodeState(state)}`;
+        dom.shareLink.value = url.toString();
+        setToast("공유 링크를 만들었어요.");
+      }
+
+      async function copyShareLink() {
+        if (!dom.shareLink.value) createShareLink();
+        try {
+          await navigator.clipboard.writeText(dom.shareLink.value);
+          setToast("링크를 복사했어요.");
+        } catch {
+          dom.shareLink.select();
+          document.execCommand("copy");
+          setToast("링크를 복사했어요.");
+        }
+      }
+
+      function importShareLink() {
+        const raw = dom.importLink.value.trim();
+        if (!raw) return;
+        const incoming = decodeStateFromLink(raw);
+        if (!incoming) {
+          setToast("불러오지 못했어요. 링크를 확인해 주세요.");
+          return;
+        }
+        Object.assign(state, incoming);
+        state.activeMemberId = state.activeMemberId || state.members[0]?.id || null;
+        syncVisibleMonthToSelection();
+        renderAll();
+        setToast("공유된 일정이 열렸어요.");
+      }
+
+      function updateSharePreview() {
+        if (!dom.shareLink.value && location.hash.startsWith("#s=")) {
+          dom.shareLink.value = location.href;
+        }
+      }
+
+      function updateStatus() {
+        dom.statusPill.textContent = `${state.members.length} MEMBERS · ${formatVisibleMonth()}`;
+      }
+
+      function setShift(memberId, date, shift) {
+        if (!memberId || !date) return;
+        const bucket = getBucket(memberId);
+        bucket[date] = shift;
+      }
+
+      function getShift(memberId, date) {
+        return getBucket(memberId)[date] ?? null;
+      }
+
+      function getBucket(memberId) {
+        if (!state.shiftsByMember[memberId]) {
+          state.shiftsByMember[memberId] = {};
+        }
+        return state.shiftsByMember[memberId];
+      }
+
+      function countShifts(memberId, shift) {
+        const bucket = getBucket(memberId);
+        const values = Object.values(bucket);
+        if (!shift) return values.length;
+        return values.filter((value) => value === shift).length;
+      }
+
+      function activeMember() {
+        return state.members.find((member) => member.id === state.activeMemberId) ?? state.members[0] ?? null;
+      }
+
+      function getVisibleMonth() {
+        return { year: state.currentYear, month: state.currentMonth };
+      }
+
+      function formatVisibleMonth() {
+        const { year, month } = getVisibleMonth();
+        return new Date(year, month, 1).toLocaleDateString("en-US", { month: "short" });
+      }
+
+      function formatFullDate(date) {
+        return new Date(date).toLocaleDateString("ko-KR", {
+          year: "numeric",
+          month: "long",
+          day: "numeric",
+          weekday: "long",
+        });
+      }
+
+      function isoDate(date) {
+        const value = new Date(date);
+        const year = value.getFullYear();
+        const month = String(value.getMonth() + 1).padStart(2, "0");
+        const day = String(value.getDate()).padStart(2, "0");
+        return `${year}-${month}-${day}`;
+      }
+
+      function addDays(date, delta) {
+        const value = new Date(date);
+        value.setDate(value.getDate() + delta);
+        return isoDate(value);
+      }
+
+      function setSelectedDate(date) {
+        state.selectedDate = date;
+        syncVisibleMonthToSelection();
+      }
+
+      function syncVisibleMonthToSelection() {
+        if (!state.selectedDate) return;
+        const selected = new Date(`${state.selectedDate}T00:00:00`);
+        state.currentYear = selected.getFullYear();
+        state.currentMonth = selected.getMonth();
+      }
+
+      function saveState() {
+        try {
+          storage.setItem(STORAGE_KEY, JSON.stringify(state));
+        } catch {
+          // Fallback to in-memory only when the browser blocks storage on file://.
+        }
+      }
+
+      function loadState() {
+        let raw = null;
+        try {
+          raw = storage.getItem(STORAGE_KEY);
+        } catch {
+          return null;
+        }
+        if (!raw) return null;
+        try {
+          return JSON.parse(raw);
+        } catch {
+          return null;
+        }
+      }
+
+      function encodeState(data) {
+        const json = JSON.stringify(data);
+        const utf8 = new TextEncoder().encode(json);
+        let binary = "";
+        utf8.forEach((byte) => {
+          binary += String.fromCharCode(byte);
+        });
+        return btoa(binary).replaceAll("+", "-").replaceAll("/", "_").replaceAll("=", "");
+      }
+
+      function decodeState(encoded) {
+        const normalized = encoded.replaceAll("-", "+").replaceAll("_", "/");
+        const padding = normalized.length % 4 === 0 ? "" : "=".repeat(4 - (normalized.length % 4));
+        const binary = atob(normalized + padding);
+        const bytes = Uint8Array.from(binary, (char) => char.charCodeAt(0));
+        return JSON.parse(new TextDecoder().decode(bytes));
+      }
+
+      function decodeStateFromLink(link) {
+        try {
+          const hash = link.includes("#") ? link.split("#").pop() : link;
+          const payload = new URLSearchParams(hash.startsWith("s=") ? hash : hash.replace(/^.*s=/, "s=")).get("s");
+          if (!payload) return null;
+          return decodeState(payload);
+        } catch {
+          return null;
+        }
+      }
+
+      function syncHashLoad() {
+        if (!location.hash.startsWith("#s=")) return;
+        const payload = new URLSearchParams(location.hash.slice(1)).get("s");
+        if (!payload) return;
+        try {
+          const incoming = decodeState(payload);
+          Object.assign(state, incoming);
+          state.activeMemberId = state.activeMemberId || state.members[0]?.id || null;
+          setToast("공유 링크를 불러왔어요.");
+        } catch {
+          setToast("공유 링크를 읽지 못했어요.");
+        }
+      }
+
+      function setToast(message) {
+        dom.toast.textContent = message;
+        window.clearTimeout(setToast._timer);
+        setToast._timer = window.setTimeout(() => {
+          dom.toast.textContent = "";
+        }, 2200);
+      }
+
+      function createStorage() {
+        try {
+          const testKey = "__nurse_shift_board_test__";
+          window.localStorage.setItem(testKey, "1");
+          window.localStorage.removeItem(testKey);
+          return window.localStorage;
+        } catch {
+          const memory = new Map();
+          return {
+            getItem(key) {
+              return memory.has(key) ? memory.get(key) : null;
+            },
+            setItem(key, value) {
+              memory.set(key, String(value));
+            },
+            removeItem(key) {
+              memory.delete(key);
+            },
+          };
+        }
+      }
+
+      function escapeHtml(value) {
+        return value
+          .replaceAll("&", "&amp;")
+          .replaceAll("<", "&lt;")
+          .replaceAll(">", "&gt;")
+          .replaceAll('"', "&quot;")
+          .replaceAll("'", "&#39;");
+      }
+    </script>
+  </body>
+</html>
