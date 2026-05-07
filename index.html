@@ -413,11 +413,6 @@
         letter-spacing: 0.12em;
       }
 
-      .share-box {
-        display: grid;
-        gap: 10px;
-      }
-
       .toast {
         min-height: 20px;
         color: var(--accent);
@@ -532,7 +527,7 @@
         <div>
           <div class="eyebrow">Prototype for nurses</div>
           <h1>Nurse Shift Board</h1>
-          <p class="lead">Day, Evening, Night, OFF. 빠르게 기록하고, 달력으로 보고, 링크 하나로 서로 공유하는 첫 프로토타입입니다.</p>
+          <p class="lead">Day, Evening, Night, OFF. 빠르게 기록하고 달력으로 확인하는 간호사 듀티 입력 프로토타입입니다.</p>
         </div>
         <div class="status-pill" id="statusPill">LOCAL PROTOTYPE</div>
       </div>
@@ -549,26 +544,11 @@
           </section>
 
           <section class="card">
-            <div class="section-title">Quick Share</div>
-            <div class="share-box">
-              <button class="btn btn-primary" id="shareBtn">공유 링크 만들기</button>
-              <button class="btn btn-secondary" id="copyBtn">링크 복사</button>
-              <textarea id="shareLink" class="field" rows="4" placeholder="공유 링크가 여기 표시돼요" readonly></textarea>
-              <div class="row">
-                <input id="importLink" class="field" placeholder="공유 링크 붙여넣기" />
-                <button class="btn btn-secondary" id="importBtn">불러오기</button>
-              </div>
-              <div class="toast" id="toast"></div>
-            </div>
-          </section>
-
-          <section class="card">
             <div class="section-title">How it works</div>
             <div class="empty">
               1. 사람 추가<br />
               2. 시작 날짜 클릭<br />
-              3. 아래 듀티를 순서대로 누르기<br />
-              4. 링크로 공유
+              3. 아래 듀티를 순서대로 누르기
             </div>
           </section>
         </aside>
@@ -606,6 +586,8 @@
 
             <div class="shift-pills" id="shiftButtons"></div>
 
+            <div class="toast" id="toast"></div>
+
             <div class="stats" id="stats"></div>
           </section>
         </main>
@@ -632,11 +614,6 @@
         teamList: document.getElementById("teamList"),
         memberName: document.getElementById("memberName"),
         addMemberBtn: document.getElementById("addMemberBtn"),
-        shareBtn: document.getElementById("shareBtn"),
-        copyBtn: document.getElementById("copyBtn"),
-        shareLink: document.getElementById("shareLink"),
-        importLink: document.getElementById("importLink"),
-        importBtn: document.getElementById("importBtn"),
         toast: document.getElementById("toast"),
         monthLabel: document.getElementById("monthLabel"),
         monthHint: document.getElementById("monthHint"),
@@ -675,7 +652,6 @@
       let lastSeenDate = isoDate(new Date());
 
       renderWeekdays();
-      syncHashLoad();
       renderAll();
       startAutoRefresh();
 
@@ -683,9 +659,6 @@
       dom.memberName.addEventListener("keydown", (event) => {
         if (event.key === "Enter") addMember();
       });
-      dom.shareBtn.addEventListener("click", createShareLink);
-      dom.copyBtn.addEventListener("click", copyShareLink);
-      dom.importBtn.addEventListener("click", importShareLink);
       dom.prevMonthBtn.addEventListener("click", () => shiftMonth(-1));
       dom.nextMonthBtn.addEventListener("click", () => shiftMonth(1));
       dom.todayBtn.addEventListener("click", goToToday);
@@ -701,7 +674,6 @@
         renderCalendar();
         renderSelected();
         renderStats();
-        updateSharePreview();
         updateStatus();
       }
 
@@ -926,46 +898,6 @@
         renderAll();
       }
 
-      function createShareLink() {
-        const url = new URL(location.href);
-        url.hash = `s=${encodeState(state)}`;
-        dom.shareLink.value = url.toString();
-        setToast("공유 링크를 만들었어요.");
-      }
-
-      async function copyShareLink() {
-        if (!dom.shareLink.value) createShareLink();
-        try {
-          await navigator.clipboard.writeText(dom.shareLink.value);
-          setToast("링크를 복사했어요.");
-        } catch {
-          dom.shareLink.select();
-          document.execCommand("copy");
-          setToast("링크를 복사했어요.");
-        }
-      }
-
-      function importShareLink() {
-        const raw = dom.importLink.value.trim();
-        if (!raw) return;
-        const incoming = decodeStateFromLink(raw);
-        if (!incoming) {
-          setToast("불러오지 못했어요. 링크를 확인해 주세요.");
-          return;
-        }
-        Object.assign(state, incoming);
-        state.activeMemberId = state.activeMemberId || state.members[0]?.id || null;
-        syncVisibleMonthToSelection();
-        renderAll();
-        setToast("공유된 일정이 열렸어요.");
-      }
-
-      function updateSharePreview() {
-        if (!dom.shareLink.value && location.hash.startsWith("#s=")) {
-          dom.shareLink.value = location.href;
-        }
-      }
-
       function updateStatus() {
         dom.statusPill.textContent = `${state.members.length} MEMBERS · ${formatVisibleMonth()}`;
       }
@@ -1062,49 +994,6 @@
           return JSON.parse(raw);
         } catch {
           return null;
-        }
-      }
-
-      function encodeState(data) {
-        const json = JSON.stringify(data);
-        const utf8 = new TextEncoder().encode(json);
-        let binary = "";
-        utf8.forEach((byte) => {
-          binary += String.fromCharCode(byte);
-        });
-        return btoa(binary).replaceAll("+", "-").replaceAll("/", "_").replaceAll("=", "");
-      }
-
-      function decodeState(encoded) {
-        const normalized = encoded.replaceAll("-", "+").replaceAll("_", "/");
-        const padding = normalized.length % 4 === 0 ? "" : "=".repeat(4 - (normalized.length % 4));
-        const binary = atob(normalized + padding);
-        const bytes = Uint8Array.from(binary, (char) => char.charCodeAt(0));
-        return JSON.parse(new TextDecoder().decode(bytes));
-      }
-
-      function decodeStateFromLink(link) {
-        try {
-          const hash = link.includes("#") ? link.split("#").pop() : link;
-          const payload = new URLSearchParams(hash.startsWith("s=") ? hash : hash.replace(/^.*s=/, "s=")).get("s");
-          if (!payload) return null;
-          return decodeState(payload);
-        } catch {
-          return null;
-        }
-      }
-
-      function syncHashLoad() {
-        if (!location.hash.startsWith("#s=")) return;
-        const payload = new URLSearchParams(location.hash.slice(1)).get("s");
-        if (!payload) return;
-        try {
-          const incoming = decodeState(payload);
-          Object.assign(state, incoming);
-          state.activeMemberId = state.activeMemberId || state.members[0]?.id || null;
-          setToast("공유 링크를 불러왔어요.");
-        } catch {
-          setToast("공유 링크를 읽지 못했어요.");
         }
       }
 
