@@ -43,13 +43,32 @@ def parse_duty():
         except (TypeError, ValueError):
             pass
 
+    year = None
+    month = None
+    try:
+        raw_year = request.form.get("year")
+        if raw_year:
+            year = max(2020, min(2099, int(raw_year)))
+    except (TypeError, ValueError):
+        pass
+    try:
+        raw_month = request.form.get("month")
+        if raw_month:
+            month = max(1, min(12, int(raw_month)))
+    except (TypeError, ValueError):
+        pass
+
     mode = request.form.get("mode", "claude").lower()
     if mode not in {"claude", "tesseract"}:
         mode = "claude"
 
     try:
         if mode == "claude":
-            result = parse_duty_image_with_claude(payload, upload.filename, row_index=row_index)
+            result = parse_duty_image_with_claude(
+                payload, upload.filename,
+                row_index=row_index,
+                year=year, month=month,
+            )
         else:
             result = parse_duty_image_bytes(payload, upload.filename, row_index=row_index)
     except RuntimeError as error:

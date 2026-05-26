@@ -257,6 +257,8 @@ def parse_duty_image_with_claude(
     row_index: int | None = None,
     source_format: str = "image",
     include_debug: bool = False,
+    year: int | None = None,
+    month: int | None = None,
 ) -> dict:
     api_key = os.environ.get("ANTHROPIC_API_KEY")
     if not api_key:
@@ -265,7 +267,11 @@ def parse_duty_image_with_claude(
     import io
 
     image = Image.open(io.BytesIO(image_bytes)).convert("RGB")
-    year, month = guess_month_and_year(filename)
+    guessed_year, guessed_month = guess_month_and_year(filename)
+    if year is None:
+        year = guessed_year
+    if month is None:
+        month = guessed_month
     table_box = detect_table_box(image)
     rectified = rectify_table(image, table_box, DEFAULT_TEMPLATE.table_size)
 
