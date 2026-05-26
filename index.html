@@ -764,40 +764,6 @@
         ocrStatus: document.getElementById("ocrStatus"),
       };
 
-      // ── OCR 연월/행 초기화 ─────────────────────────────────────────────────
-      (function initOcrPrefs() {
-        // 연도 드롭다운: 작년 · 올해 · 내년
-        const thisYear = now.getFullYear();
-        [-1, 0, 1].forEach((delta) => {
-          const y = thisYear + delta;
-          const opt = document.createElement("option");
-          opt.value = y;
-          opt.textContent = `${y}년`;
-          dom.ocrYearSelect.appendChild(opt);
-        });
-
-        // 저장된 설정 복원
-        let prefs = {};
-        try { prefs = JSON.parse(storage.getItem(OCR_PREFS_KEY) ?? "{}"); } catch {}
-        dom.ocrYearSelect.value  = prefs.year  ?? thisYear;
-        dom.ocrMonthSelect.value = prefs.month ?? (now.getMonth() + 1);
-        dom.ocrRowSelect.value   = prefs.row   ?? "1";
-      })();
-
-      function saveOcrPrefs() {
-        try {
-          storage.setItem(OCR_PREFS_KEY, JSON.stringify({
-            year:  dom.ocrYearSelect.value,
-            month: dom.ocrMonthSelect.value,
-            row:   dom.ocrRowSelect.value,
-          }));
-        } catch {}
-      }
-
-      dom.ocrYearSelect.addEventListener("change", saveOcrPrefs);
-      dom.ocrMonthSelect.addEventListener("change", saveOcrPrefs);
-      dom.ocrRowSelect.addEventListener("change", saveOcrPrefs);
-
       const now = new Date();
       const storage = createStorage();
       const state = normalizeState(loadState() ?? {
@@ -819,6 +785,37 @@
         state.shiftsByMember = {};
       }
       syncVisibleMonthToSelection();
+
+      // ── OCR 연월/행 초기화 (now · storage 정의 이후) ────────────────────────
+      (function initOcrPrefs() {
+        const thisYear = now.getFullYear();
+        [-1, 0, 1].forEach((delta) => {
+          const y = thisYear + delta;
+          const opt = document.createElement("option");
+          opt.value = y;
+          opt.textContent = `${y}년`;
+          dom.ocrYearSelect.appendChild(opt);
+        });
+        let prefs = {};
+        try { prefs = JSON.parse(storage.getItem(OCR_PREFS_KEY) ?? "{}"); } catch {}
+        dom.ocrYearSelect.value  = prefs.year  ?? thisYear;
+        dom.ocrMonthSelect.value = prefs.month ?? (now.getMonth() + 1);
+        dom.ocrRowSelect.value   = prefs.row   ?? "1";
+      })();
+
+      function saveOcrPrefs() {
+        try {
+          storage.setItem(OCR_PREFS_KEY, JSON.stringify({
+            year:  dom.ocrYearSelect.value,
+            month: dom.ocrMonthSelect.value,
+            row:   dom.ocrRowSelect.value,
+          }));
+        } catch {}
+      }
+
+      dom.ocrYearSelect.addEventListener("change", saveOcrPrefs);
+      dom.ocrMonthSelect.addEventListener("change", saveOcrPrefs);
+      dom.ocrRowSelect.addEventListener("change", saveOcrPrefs);
 
       let lastSeenDate = isoDate(new Date());
 
