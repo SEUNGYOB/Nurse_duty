@@ -11,7 +11,7 @@ from pathlib import Path
 
 import numpy as np
 from PIL import Image, ImageDraw, ImageFilter, ImageFont, ImageOps
-from scipy import ndimage
+from . import _morphology as ndimage
 
 
 ROW_NAMES = [

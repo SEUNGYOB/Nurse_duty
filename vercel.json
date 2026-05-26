@@ -1,7 +1,8 @@
 {
   "functions": {
-    "api/parse-duty.js": {
-      "maxDuration": 60
+    "api/parse-duty.py": {
+      "maxDuration": 60,
+      "memory": 1024
     }
   }
 }
