@@ -183,24 +183,28 @@ def build_prompt(year: int, month: int) -> str:
     return f"""
 You are reading a Korean hospital nurse duty roster table photographed with a phone camera.
 
-Context:
-- Year: {year}, Month: {month}
+Context hint (override with what you actually see in the image title):
+- Hint year: {year}, Hint month: {month}
 - The table header row shows day numbers (1~30) and weekday abbreviations (월화수목금토일).
 - Below the header are nurse rows. Each nurse row has: row number | name | 성별 | 30 day cells.
 - The duty cells contain exactly one of: D, E, N, S, Y, OFF
 - "off" written in lowercase in the original image should be returned as OFF.
 
 Your task:
-- Read every cell for ALL 16 nurses listed below.
-- Use the header row's day numbers to align each cell to the correct day (1~30).
-- If a cell is illegible, return null for that specific cell only (do not null out the whole row).
-- Do not guess or infer from neighboring cells or scheduling patterns.
+1. If the image shows a title like "2026년 6월 근무표", read the actual year and month from it.
+   Otherwise use the hint values above.
+2. Read every cell for ALL 16 nurses listed below.
+3. Use the header row's day numbers to align each cell to the correct day (1~30).
+4. If a cell is illegible, return null for that specific cell only (do not null out the whole row).
+5. Do not guess or infer from neighboring cells or scheduling patterns.
 
 Nurses (in this exact order):
 {names_blob}
 
 Return ONLY valid JSON with this exact shape (no commentary, no markdown):
 {{
+  "year": {year},
+  "month": {month},
   "rows": [
     {{
       "rowIndex": 1,
@@ -212,6 +216,7 @@ Return ONLY valid JSON with this exact shape (no commentary, no markdown):
 }}
 
 Rules:
+- year and month must reflect what is actually visible in the image title (not the hint) if readable.
 - shifts array must have exactly 30 items (days 1 through 30).
 - Valid shift values: D, E, N, S, Y, OFF — always uppercase, never null unless truly illegible.
 - rowIndex is 1-based matching the order above.
@@ -328,6 +333,21 @@ def parse_duty_image_with_claude(
 
     response_text = extract_text_blocks(response_json)
     parsed_payload = extract_json_payload(response_text)
+
+    # Claude가 이미지 제목에서 연월을 직접 읽었으면 그 값을 사용
+    try:
+        detected_year = int(parsed_payload.get("year", year))
+        if 2020 <= detected_year <= 2099:
+            year = detected_year
+    except (TypeError, ValueError):
+        pass
+    try:
+        detected_month = int(parsed_payload.get("month", month))
+        if 1 <= detected_month <= 12:
+            month = detected_month
+    except (TypeError, ValueError):
+        pass
+
     rows = normalize_rows(parsed_payload)
 
     if row_index is not None:

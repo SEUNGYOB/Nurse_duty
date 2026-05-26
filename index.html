@@ -378,6 +378,8 @@
       .badge-day { background: var(--day); color: #2f250f; }
       .badge-evening { background: var(--evening); }
       .badge-night { background: var(--night); }
+      .badge-s { background: #2a9d5c; }
+      .badge-y { background: #7c6fa0; }
       .badge-off { background: var(--off); color: #25303a; }
 
       .calendar-note {
@@ -407,7 +409,7 @@
 
       .shift-pills {
         display: grid;
-        grid-template-columns: repeat(4, minmax(0, 1fr));
+        grid-template-columns: repeat(6, minmax(0, 1fr));
         gap: 10px;
       }
 
@@ -427,10 +429,12 @@
         box-shadow: 0 0 0 4px rgba(28, 124, 122, 0.08);
       }
 
-      .shift-btn[data-shift="day"] { color: #8a5b00; }
+      .shift-btn[data-shift="day"]     { color: #8a5b00; }
       .shift-btn[data-shift="evening"] { color: #a93e29; }
-      .shift-btn[data-shift="night"] { color: #244460; }
-      .shift-btn[data-shift="off"] { color: #5c6974; }
+      .shift-btn[data-shift="night"]   { color: #244460; }
+      .shift-btn[data-shift="s"]       { color: #1a6b3c; }
+      .shift-btn[data-shift="y"]       { color: #4e4072; }
+      .shift-btn[data-shift="off"]     { color: #5c6974; }
 
       .stats {
         display: grid;
@@ -563,7 +567,7 @@
         }
 
         .shift-pills {
-          grid-template-columns: repeat(2, minmax(0, 1fr));
+          grid-template-columns: repeat(3, minmax(0, 1fr));
         }
 
         .subtle {
@@ -710,15 +714,26 @@
         day: "Day",
         evening: "Evening",
         night: "Night",
+        s: "S",
+        y: "연차",
         off: "OFF",
       };
       const SHIFT_CLASS = {
         day: "badge-day",
         evening: "badge-evening",
         night: "badge-night",
+        s: "badge-s",
+        y: "badge-y",
         off: "badge-off",
       };
-      const SHIFT_ORDER = ["day", "evening", "night", "off"];
+      const SHIFT_ORDER = ["day", "evening", "night", "s", "y", "off"];
+
+      // OCR 코드(D/E/N/S/Y/off) → 프론트엔드 shift 키 변환
+      const OCR_TO_SHIFT = {
+        D: "day", E: "evening", N: "night",
+        S: "s", Y: "y",
+        off: "off", OFF: "off",
+      };
       const WEEKDAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
       const MAX_MEMBERS = 2;
       const OCR_PREFS_KEY = "nurse-shift-board:ocr-prefs";
@@ -871,9 +886,11 @@
           let applied = 0;
           row.shifts.forEach((shift, index) => {
             if (!shift) return;
+            const mapped = OCR_TO_SHIFT[shift] ?? null;
+            if (!mapped) return;
             const day = index + 1;
             if (day > daysInMonth) return;
-            setShift(member.id, isoDate(new Date(year, month - 1, day)), shift);
+            setShift(member.id, isoDate(new Date(year, month - 1, day)), mapped);
             applied++;
           });
 
