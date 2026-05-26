@@ -1,92 +1,83 @@
 #!/usr/bin/env python3
 from __future__ import annotations
 
-import cgi
-import json
-from http import HTTPStatus
-from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
+import os
 from pathlib import Path
-from urllib.parse import urlparse
+
+from dotenv import load_dotenv
+from flask import Flask, jsonify, request, send_file
+from flask_cors import CORS
+from werkzeug.exceptions import RequestEntityTooLarge
 
 from ocr import parse_duty_image_bytes
 
+load_dotenv()
 
 ROOT = Path(__file__).resolve().parent
-HOST = "127.0.0.1"
-PORT = 3000
+HOST = os.getenv("HOST", "0.0.0.0")
+PORT = int(os.getenv("PORT", "3000"))
+MAX_UPLOAD_MB = int(os.getenv("MAX_UPLOAD_MB", "10"))
+API_TOKEN = os.getenv("API_TOKEN", "")
+ALLOWED_ORIGINS = [o.strip() for o in os.getenv("ALLOWED_ORIGINS", "*").split(",")]
+
+app = Flask(__name__)
+app.config["MAX_CONTENT_LENGTH"] = MAX_UPLOAD_MB * 1024 * 1024
+
+CORS(app, origins=ALLOWED_ORIGINS)
 
 
-class Handler(BaseHTTPRequestHandler):
-    def do_GET(self) -> None:
-        parsed = urlparse(self.path)
-        if parsed.path in {"/", "/index.html"}:
-            self.serve_file(ROOT / "index.html", "text/html; charset=utf-8")
-            return
-        if parsed.path == "/README.md":
-            self.serve_file(ROOT / "README.md", "text/markdown; charset=utf-8")
-            return
+def _check_token() -> tuple | None:
+    """API_TOKEN이 설정된 경우에만 검증한다."""
+    if not API_TOKEN:
+        return None
+    if request.headers.get("X-API-Token") != API_TOKEN:
+        return jsonify({"error": "인증 토큰이 올바르지 않습니다."}), 401
+    return None
 
-        file_path = ROOT / parsed.path.lstrip("/")
-        if file_path.exists() and file_path.is_file():
-            content_type = "image/jpeg" if file_path.suffix.lower() in {".jpg", ".jpeg"} else "application/octet-stream"
-            self.serve_file(file_path, content_type)
-            return
 
-        self.send_error(HTTPStatus.NOT_FOUND, "Not found")
+@app.errorhandler(RequestEntityTooLarge)
+def _too_large(_e: RequestEntityTooLarge):
+    return jsonify({"error": f"파일 크기가 {MAX_UPLOAD_MB}MB를 초과했습니다."}), 413
 
-    def do_POST(self) -> None:
-        parsed = urlparse(self.path)
-        if parsed.path != "/api/parse-duty":
-            self.send_error(HTTPStatus.NOT_FOUND, "Not found")
-            return
 
-        form = cgi.FieldStorage(
-            fp=self.rfile,
-            headers=self.headers,
-            environ={
-                "REQUEST_METHOD": "POST",
-                "CONTENT_TYPE": self.headers.get("Content-Type", ""),
-            },
-        )
-        upload = form["file"] if "file" in form else None
-        if upload is None or not getattr(upload, "file", None):
-            self.send_json({"error": "사진 파일을 찾지 못했어요."}, status=HTTPStatus.BAD_REQUEST)
-            return
+@app.get("/health")
+def health():
+    return jsonify({"status": "ok"})
 
-        payload = upload.file.read()
-        row_index = None
-        if "rowIndex" in form:
-            try:
-                row_index = max(1, min(16, int(form.getfirst("rowIndex"))))
-            except (TypeError, ValueError):
-                row_index = None
 
-        result = parse_duty_image_bytes(payload, upload.filename or "", row_index=row_index)
-        self.send_json(result)
+@app.get("/")
+@app.get("/index.html")
+def index():
+    return send_file(ROOT / "index.html")
 
-    def serve_file(self, path: Path, content_type: str) -> None:
-        data = path.read_bytes()
-        self.send_response(HTTPStatus.OK)
-        self.send_header("Content-Type", content_type)
-        self.send_header("Content-Length", str(len(data)))
-        self.end_headers()
-        self.wfile.write(data)
 
-    def send_json(self, data: dict, status: HTTPStatus = HTTPStatus.OK) -> None:
-        payload = json.dumps(data, ensure_ascii=False).encode("utf-8")
-        self.send_response(status)
-        self.send_header("Content-Type", "application/json; charset=utf-8")
-        self.send_header("Content-Length", str(len(payload)))
-        self.end_headers()
-        self.wfile.write(payload)
+@app.post("/api/parse-duty")
+def parse_duty():
+    err = _check_token()
+    if err:
+        return err
+
+    if "file" not in request.files:
+        return jsonify({"error": "사진 파일을 찾지 못했어요."}), 400
+
+    upload = request.files["file"]
+    if not upload.filename:
+        return jsonify({"error": "사진 파일을 찾지 못했어요."}), 400
+
+    payload = upload.read()
+
+    row_index = None
+    raw_row = request.form.get("rowIndex")
+    if raw_row is not None:
+        try:
+            row_index = max(1, min(16, int(raw_row)))
+        except (TypeError, ValueError):
+            pass
+
+    result = parse_duty_image_bytes(payload, upload.filename, row_index=row_index)
+    return jsonify(result)
 
 
 if __name__ == "__main__":
-    server = ThreadingHTTPServer((HOST, PORT), Handler)
     print(f"Serving on http://{HOST}:{PORT}")
-    try:
-        server.serve_forever()
-    except KeyboardInterrupt:
-        pass
-    finally:
-        server.server_close()
+    app.run(host=HOST, port=PORT, threaded=True)

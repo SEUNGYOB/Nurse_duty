@@ -3,3 +3,4 @@
 __pycache__/
 ocr/__pycache__/
 scratch/
+.env
