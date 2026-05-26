@@ -9,7 +9,7 @@ from flask import Flask, jsonify, request, send_file
 from flask_cors import CORS
 from werkzeug.exceptions import RequestEntityTooLarge
 
-from ocr import parse_duty_image_bytes
+from ocr import parse_duty_image_bytes, parse_duty_image_with_claude, parse_duty_image_with_google
 
 load_dotenv()
 
@@ -20,6 +20,10 @@ MAX_UPLOAD_MB = int(os.getenv("MAX_UPLOAD_MB", "10"))
 API_TOKEN = os.getenv("API_TOKEN", "")
 ALLOWED_ORIGINS = [o.strip() for o in os.getenv("ALLOWED_ORIGINS", "*").split(",")]
 
+SERVICE_ACCOUNT_CREDENTIALS = ROOT / "credentials" / "google-service-account.json"
+if not os.environ.get("GOOGLE_APPLICATION_CREDENTIALS") and SERVICE_ACCOUNT_CREDENTIALS.exists():
+    os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = str(SERVICE_ACCOUNT_CREDENTIALS)
+
 app = Flask(__name__)
 app.config["MAX_CONTENT_LENGTH"] = MAX_UPLOAD_MB * 1024 * 1024
 
@@ -27,7 +31,6 @@ CORS(app, origins=ALLOWED_ORIGINS)
 
 
 def _check_token() -> tuple | None:
-    """API_TOKEN이 설정된 경우에만 검증한다."""
     if not API_TOKEN:
         return None
     if request.headers.get("X-API-Token") != API_TOKEN:
@@ -74,7 +77,21 @@ def parse_duty():
         except (TypeError, ValueError):
             pass
 
-    result = parse_duty_image_bytes(payload, upload.filename, row_index=row_index)
+    mode = request.form.get("mode", "claude").lower()
+    if mode not in {"claude", "google", "tesseract"}:
+        mode = "claude"
+
+    try:
+        if mode == "google":
+            result = parse_duty_image_with_google(payload, upload.filename, row_index=row_index)
+        elif mode == "claude":
+            result = parse_duty_image_with_claude(payload, upload.filename, row_index=row_index)
+        else:
+            result = parse_duty_image_bytes(payload, upload.filename, row_index=row_index)
+    except RuntimeError as error:
+        return jsonify({"error": str(error), "mode": mode}), 502
+
+    result["mode"] = mode
     return jsonify(result)
 
 
