@@ -158,33 +158,49 @@ server {
 
 ## 5. Vercel 연결
 
-Vercel 프로젝트 설정 → Environment Variables 에 추가:
+### 구조
 
-| 변수 | 예시 값 |
-|------|---------|
-| `NEXT_PUBLIC_OCR_API_URL` | `https://your-domain.com` |
-| `NEXT_PUBLIC_OCR_API_TOKEN` | `<API_TOKEN 값>` |
-
-프론트엔드에서 호출 예시:
-
-```javascript
-const API_BASE = process.env.NEXT_PUBLIC_OCR_API_URL;
-const API_TOKEN = process.env.NEXT_PUBLIC_OCR_API_TOKEN;
-
-const formData = new FormData();
-formData.append("file", imageFile);
-formData.append("rowIndex", "3");
-
-const res = await fetch(`${API_BASE}/api/parse-duty`, {
-  method: "POST",
-  headers: { "X-API-Token": API_TOKEN },
-  body: formData,
-});
-const data = await res.json();
+```
+브라우저 (Vercel)
+  └─ POST /api/parse-duty
+       └─ Vercel 함수 (api/parse-duty.js)  ← Mac Mini URL·토큰을 여기서 보관
+            └─ POST <OCR_API_URL>/api/parse-duty  → 맥 미니 서버
 ```
 
-현재 `index.html`은 Vercel에 정적 파일로 올리고, OCR 호출 코드를 위와 같이 추가하면 됩니다.  
-`API_BASE`를 하드코딩하지 말고 반드시 환경변수로 주입하세요.
+브라우저는 Mac Mini를 직접 알 필요가 없습니다. Vercel 함수가 프록시 역할을 합니다.  
+HTTPS 문제(Mixed Content)도 Vercel 함수가 자동으로 해결합니다.
+
+### Vercel 환경변수 설정
+
+Vercel 프로젝트 → Settings → Environment Variables 에 추가:
+
+| 변수 | 예시 값 | 설명 |
+|------|---------|------|
+| `OCR_API_URL` | `https://xxxx.trycloudflare.com` | 맥 미니 외부 주소 |
+| `OCR_API_TOKEN` | `<API_TOKEN 값>` | server.py의 API_TOKEN과 동일 |
+
+### 배포 절차
+
+```bash
+# Vercel CLI 설치 (처음 한 번)
+npm i -g vercel
+
+# 프로젝트 루트에서
+vercel
+
+# 이후 변경사항 배포
+vercel --prod
+```
+
+또는 GitHub 저장소를 Vercel에 연결하면 main 브랜치 push 시 자동 배포됩니다.
+
+### 배포 후 확인
+
+```bash
+# Vercel 함수가 맥 미니에 연결되는지 확인
+curl https://your-app.vercel.app/api/parse-duty -X POST
+# → {"error":"사진 파일을 찾지 못했어요."} 가 나오면 연결 성공
+```
 
 ---
 

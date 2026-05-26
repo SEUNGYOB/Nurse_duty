@@ -185,8 +185,27 @@
 
       input,
       button,
+      select,
       textarea {
         font: inherit;
+      }
+
+      .ocr-file-label {
+        display: block;
+        text-align: center;
+        cursor: pointer;
+        margin-bottom: 8px;
+      }
+
+      .ocr-hint {
+        text-align: center;
+        min-height: 18px;
+      }
+
+      #ocrImportBtn:disabled {
+        opacity: 0.45;
+        cursor: not-allowed;
+        transform: none;
       }
 
       .field {
@@ -593,6 +612,40 @@
             </div>
           </section>
 
+          <section class="card">
+            <div class="section-title">근무표 가져오기</div>
+            <div class="empty" style="margin-bottom: 12px">근무표 사진을 올리면 선택한 팀원의 듀티를 자동으로 채워드려요.</div>
+
+            <label for="ocrFileInput" class="btn btn-secondary ocr-file-label">사진 선택</label>
+            <input type="file" id="ocrFileInput" accept="image/*" style="display:none" />
+            <div id="ocrFileName" class="subtle ocr-hint" style="margin-bottom: 10px"></div>
+
+            <div style="margin-bottom: 10px">
+              <div class="subtle" style="margin-bottom: 6px">내 행 번호 (근무표에서 몇 번째 줄?)</div>
+              <select id="ocrRowSelect" class="field" style="cursor:pointer">
+                <option value="1">1번 · 윤미영</option>
+                <option value="2">2번 · 구명임</option>
+                <option value="3">3번 · 이현진</option>
+                <option value="4">4번 · 장해진</option>
+                <option value="5">5번 · 이영미</option>
+                <option value="6">6번 · 이경순</option>
+                <option value="7">7번 · 김향수</option>
+                <option value="8">8번 · 최은영</option>
+                <option value="9">9번 · 유정숙</option>
+                <option value="10">10번 · 이은우</option>
+                <option value="11">11번 · 김영애</option>
+                <option value="12">12번 · 양일향</option>
+                <option value="13">13번 · 김우섭</option>
+                <option value="14">14번 · 김주희</option>
+                <option value="15">15번 · 김성남</option>
+                <option value="16">16번 · 김우진</option>
+              </select>
+            </div>
+
+            <button class="btn btn-primary" style="width:100%;margin-bottom:8px" id="ocrImportBtn" disabled>가져오기</button>
+            <div id="ocrStatus" class="subtle ocr-hint"></div>
+          </section>
+
         </aside>
 
         <main class="panel content">
@@ -671,6 +724,11 @@
         clearBtn: document.getElementById("clearBtn"),
         clearAllBtn: document.getElementById("clearAllBtn"),
         statusPill: document.getElementById("statusPill"),
+        ocrFileInput: document.getElementById("ocrFileInput"),
+        ocrRowSelect: document.getElementById("ocrRowSelect"),
+        ocrImportBtn: document.getElementById("ocrImportBtn"),
+        ocrFileName: document.getElementById("ocrFileName"),
+        ocrStatus: document.getElementById("ocrStatus"),
       };
 
       const now = new Date();
@@ -713,6 +771,71 @@
         renderAll();
       });
       dom.clearAllBtn.addEventListener("click", clearAllShifts);
+
+      dom.ocrFileInput.addEventListener("change", () => {
+        const file = dom.ocrFileInput.files[0];
+        dom.ocrFileName.textContent = file ? file.name : "";
+        dom.ocrImportBtn.disabled = !file;
+        dom.ocrStatus.textContent = "";
+      });
+
+      dom.ocrImportBtn.addEventListener("click", importFromOcr);
+
+      async function importFromOcr() {
+        const member = activeMember();
+        if (!member) {
+          setToast("팀원을 먼저 추가해 주세요.");
+          return;
+        }
+        const file = dom.ocrFileInput.files[0];
+        if (!file) return;
+
+        dom.ocrImportBtn.disabled = true;
+        dom.ocrStatus.textContent = "OCR 처리 중...";
+
+        const formData = new FormData();
+        formData.append("file", file);
+        formData.append("rowIndex", dom.ocrRowSelect.value);
+
+        try {
+          const res = await fetch("/api/parse-duty", { method: "POST", body: formData });
+          const data = await res.json();
+
+          if (!res.ok) {
+            dom.ocrStatus.textContent = `오류: ${data.error ?? res.status}`;
+            return;
+          }
+
+          const row = data.rows?.[0];
+          if (!row) {
+            dom.ocrStatus.textContent = "결과를 읽지 못했어요.";
+            return;
+          }
+
+          const { year, month } = data;
+          const daysInMonth = new Date(year, month, 0).getDate();
+          let applied = 0;
+          row.shifts.forEach((shift, index) => {
+            if (!shift) return;
+            const day = index + 1;
+            if (day > daysInMonth) return;
+            setShift(member.id, isoDate(new Date(year, month - 1, day)), shift);
+            applied++;
+          });
+
+          state.currentYear = year;
+          state.currentMonth = month - 1;
+          renderAll();
+          setToast(`${row.name} 듀티 ${applied}일 가져왔어요.`);
+          dom.ocrStatus.textContent = `${applied}일 반영 완료 (인식 ${row.recognizedDays}일)`;
+          dom.ocrFileInput.value = "";
+          dom.ocrFileName.textContent = "";
+        } catch {
+          dom.ocrStatus.textContent = "네트워크 오류가 발생했어요.";
+        } finally {
+          dom.ocrImportBtn.disabled = !dom.ocrFileInput.files[0];
+        }
+      }
 
       function renderAll() {
         saveState();
