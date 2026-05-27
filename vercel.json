@@ -3,6 +3,10 @@
     "api/parse-duty.py": {
       "maxDuration": 60,
       "memory": 1024
+    },
+    "api/share.py": {
+      "maxDuration": 10,
+      "memory": 256
     }
   }
 }

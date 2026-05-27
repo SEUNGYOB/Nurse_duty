@@ -357,6 +357,22 @@
       }
       .cal-day.is-today { background: rgba(28, 124, 122, 0.06); }
       .cal-day.is-empty { background: transparent; border-color: transparent; cursor: default; }
+      .cal-day.is-common-off {
+        background: rgba(28, 124, 122, 0.1);
+        border-color: rgba(28, 124, 122, 0.32);
+      }
+
+      .share-code-display {
+        flex: 1;
+        padding: 12px 14px;
+        border: 1px solid rgba(24, 32, 42, 0.12);
+        border-radius: 16px;
+        background: rgba(255, 255, 255, 0.88);
+        font: 700 20px/1 system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        letter-spacing: 0.12em;
+        text-align: center;
+        color: var(--accent);
+      }
 
       .weekday {
         color: var(--muted);
@@ -724,6 +740,28 @@
             <div id="ocrStatus" class="subtle ocr-hint"></div>
           </section>
 
+          <section class="card">
+            <div class="section-title">공유</div>
+            <div class="empty" style="margin-bottom: 12px">코드를 만들어 상대방에게 보내거나, 상대방 코드를 입력해 함께 보세요.</div>
+
+            <button class="btn btn-secondary" style="width:100%;margin-bottom:8px" id="shareCreateBtn">내 코드 만들기</button>
+            <div id="shareCodeWrap" style="display:none;margin-bottom:12px">
+              <div class="subtle" style="margin-bottom:6px">아래 코드를 상대방에게 전달하세요</div>
+              <div style="display:flex;gap:6px;align-items:center">
+                <div class="share-code-display" id="shareCodeText"></div>
+                <button class="btn btn-secondary" id="shareCopyBtn">복사</button>
+              </div>
+            </div>
+
+            <div class="subtle" style="margin-bottom:6px">상대방 코드 입력</div>
+            <div style="display:flex;gap:6px;margin-bottom:8px">
+              <input id="shareJoinInput" class="field" placeholder="ABC123" maxlength="6"
+                style="text-transform:uppercase;letter-spacing:.1em;font-weight:700;flex:1" />
+              <button class="btn btn-primary" id="shareJoinBtn">가져오기</button>
+            </div>
+            <div id="shareStatus" class="subtle ocr-hint"></div>
+          </section>
+
         </aside>
 
         <main class="panel content">
@@ -821,6 +859,13 @@
         ocrImportBtn: document.getElementById("ocrImportBtn"),
         ocrFileName: document.getElementById("ocrFileName"),
         ocrStatus: document.getElementById("ocrStatus"),
+        shareCreateBtn: document.getElementById("shareCreateBtn"),
+        shareCodeWrap: document.getElementById("shareCodeWrap"),
+        shareCodeText: document.getElementById("shareCodeText"),
+        shareCopyBtn: document.getElementById("shareCopyBtn"),
+        shareJoinInput: document.getElementById("shareJoinInput"),
+        shareJoinBtn: document.getElementById("shareJoinBtn"),
+        shareStatus: document.getElementById("shareStatus"),
       };
 
       const now = new Date();
@@ -903,6 +948,90 @@
       });
 
       dom.ocrImportBtn.addEventListener("click", importFromOcr);
+
+      dom.shareCreateBtn.addEventListener("click", createShareCode);
+      dom.shareCopyBtn.addEventListener("click", () => {
+        const code = dom.shareCodeText.textContent;
+        if (!code) return;
+        navigator.clipboard.writeText(code).then(() => {
+          setToast("코드를 복사했어요!");
+        }).catch(() => {
+          setToast("코드: " + code);
+        });
+      });
+      dom.shareJoinBtn.addEventListener("click", joinWithCode);
+      dom.shareJoinInput.addEventListener("keydown", (e) => {
+        if (e.key === "Enter") joinWithCode();
+      });
+
+      async function createShareCode() {
+        const member = activeMember();
+        if (!member) { setToast("팀원을 먼저 추가해 주세요."); return; }
+        const shifts = getBucket(member.id);
+        if (Object.keys(shifts).length === 0) { setToast("듀티를 먼저 입력해 주세요."); return; }
+
+        dom.shareCreateBtn.disabled = true;
+        dom.shareStatus.textContent = "코드 생성 중...";
+        dom.shareCodeWrap.style.display = "none";
+
+        try {
+          const res = await fetch("/api/share", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ member_name: member.name, shifts }),
+          });
+          const data = await res.json();
+          if (!res.ok) { dom.shareStatus.textContent = data.error ?? "오류가 발생했어요."; return; }
+          dom.shareCodeText.textContent = data.code;
+          dom.shareCodeWrap.style.display = "";
+          dom.shareStatus.textContent = "코드를 상대방에게 전달하세요!";
+          setToast("코드 생성 완료!");
+        } catch {
+          dom.shareStatus.textContent = "네트워크 오류가 발생했어요.";
+        } finally {
+          dom.shareCreateBtn.disabled = false;
+        }
+      }
+
+      async function joinWithCode() {
+        const code = dom.shareJoinInput.value.trim().toUpperCase();
+        if (!code) return;
+
+        dom.shareJoinBtn.disabled = true;
+        dom.shareStatus.textContent = "불러오는 중...";
+
+        try {
+          const res = await fetch(`/api/share?code=${encodeURIComponent(code)}`);
+          const data = await res.json();
+          if (!res.ok) { dom.shareStatus.textContent = data.error ?? "오류가 발생했어요."; return; }
+
+          const partnerName = data.member_name;
+          const partnerShifts = data.shifts;
+
+          // 현재 활성 멤버가 아닌 쪽 슬롯을 파트너로 사용
+          let partner = state.members.find((m) => m.id !== state.activeMemberId);
+          if (!partner && state.members.length < MAX_MEMBERS) {
+            partner = { id: crypto.randomUUID(), name: partnerName };
+            state.members.push(partner);
+          } else if (partner) {
+            partner.name = partnerName;
+          } else {
+            // 두 슬롯 모두 찬 경우 두 번째 멤버 덮어쓰기
+            partner = state.members[1];
+            partner.name = partnerName;
+          }
+          state.shiftsByMember[partner.id] = partnerShifts;
+
+          dom.shareJoinInput.value = "";
+          dom.shareStatus.textContent = `${partnerName}의 듀티를 가져왔어요!`;
+          renderAll();
+          setToast(`${partnerName}의 듀티를 불러왔어요.`);
+        } catch {
+          dom.shareStatus.textContent = "네트워크 오류가 발생했어요.";
+        } finally {
+          dom.shareJoinBtn.disabled = false;
+        }
+      }
 
       async function compressImage(file, maxPx = 2400, quality = 0.88) {
         return new Promise((resolve) => {
@@ -1105,7 +1234,8 @@
               const shift = getShift(member.id, iso);
               return shift ? `<div class="day-badge ${SHIFT_CLASS[shift]}">${SHIFT_LABELS[shift]}</div>` : "";
             }).join("");
-            html += `<button class="cal-day${isSelected ? " is-selected" : ""}${isToday ? " is-today" : ""}" data-date="${iso}">${badges}</button>`;
+            const allOff = members.length > 1 && members.every((m) => getShift(m.id, iso) === "off");
+            html += `<button class="cal-day${isSelected ? " is-selected" : ""}${isToday ? " is-today" : ""}${allOff ? " is-common-off" : ""}" data-date="${iso}">${badges}</button>`;
           }
           html += "</div></div>";
         }
