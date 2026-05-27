@@ -1,6 +1,4 @@
 {
-  "buildCommand": "python3 -c \"import re,time,pathlib; p=pathlib.Path('sw.js'); p.write_text(re.sub(r'nurse-shift-v[^\\\"]+', 'nurse-shift-v'+str(int(time.time())), p.read_text()))\"",
-  "outputDirectory": ".",
   "functions": {
     "api/parse-duty.py": {
       "maxDuration": 120,

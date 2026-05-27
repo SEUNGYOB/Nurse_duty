@@ -14,8 +14,12 @@ self.addEventListener("activate", (e) => {
 });
 
 self.addEventListener("fetch", (e) => {
-  // API 요청은 캐시 안 함
   if (e.request.url.includes("/api/")) return;
+  // HTML은 항상 네트워크 우선 (배포 후 즉시 반영)
+  if (e.request.destination === "document") {
+    e.respondWith(fetch(e.request).catch(() => caches.match(e.request)));
+    return;
+  }
   e.respondWith(
     caches.match(e.request).then((cached) => cached ?? fetch(e.request))
   );
