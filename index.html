@@ -1134,12 +1134,12 @@
         dom.ocrRecognizeBtn.disabled = true;
         dom.ocrImportBtn.disabled = true;
         _ocrAllRows = null;
-        dom.ocrStatus.textContent = "이미지 압축 중...";
+        dom.ocrStatus.textContent = "사진 준비 중...";
 
         try {
           const compressed = await compressImage(file);
           const sizeMB = (compressed.size / 1024 / 1024).toFixed(1);
-          dom.ocrStatus.textContent = `인식 중... (${sizeMB}MB)`;
+          dom.ocrStatus.textContent = `근무표 분석 시작 (${sizeMB}MB)`;
 
           const formData = new FormData();
           formData.append("file", compressed, file.name);

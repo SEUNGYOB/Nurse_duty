@@ -469,7 +469,7 @@ def parse_duty_image_with_claude(
 
     import io
 
-    _progress("이미지 전처리 중...")
+    _progress("근무표 읽는 중...")
     image = load_image_rgb(image_bytes)
     image, rotation_applied = auto_orient_duty_image(image)
     guessed_year, guessed_month = guess_month_and_year(filename)
@@ -506,7 +506,7 @@ def parse_duty_image_with_claude(
         "messages": [{"role": "user", "content": content}],
     }
 
-    _progress("Claude Vision 분석 중... (약 30초)")
+    _progress("AI가 듀티 보는 중... 잠깐만요")
     response_json = send_claude_request(payload, ssl_context)
     usage = response_json.get("usage", {})
     total_input_tokens  = int(usage.get("input_tokens", 0))
@@ -538,7 +538,7 @@ def parse_duty_image_with_claude(
             row_box = overlay_by_index.get(target_index)
             if not row_box:
                 continue
-            _progress(f"행 {target_index} 재판독 중...")
+            _progress(f"{target_index}번 행 꼼꼼히 확인 중...")
             refined, refine_response = request_row_refinement(
                 rectified,
                 row_box,
@@ -563,7 +563,7 @@ def parse_duty_image_with_claude(
             )
         rows = [by_index[index] for index in sorted(by_index)]
 
-    _progress("결과 정리 중...")
+    _progress("거의 다 됐어요!")
 
     if row_index is not None:
         rows = [row for row in rows if row["rowIndex"] == row_index]
