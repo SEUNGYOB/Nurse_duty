@@ -323,13 +323,7 @@ def build_schedule_boxes(template: DutySheetTemplate) -> list[dict]:
                 )
             )
 
-        rows.append(
-            {
-                "rowIndex": row_index + 1,
-                "name": ROW_NAMES[row_index],
-                "cellBoxes": cell_boxes,
-            }
-        )
+        rows.append({"rowIndex": row_index + 1, "cellBoxes": cell_boxes})
 
     return rows
 
@@ -459,13 +453,7 @@ def build_schedule_boxes_from_bounds(
                 )
             )
 
-        rows.append(
-            {
-                "rowIndex": row_index + 1,
-                "name": ROW_NAMES[row_index],
-                "cellBoxes": cell_boxes,
-            }
-        )
+        rows.append({"rowIndex": row_index + 1, "cellBoxes": cell_boxes})
 
     return rows
 

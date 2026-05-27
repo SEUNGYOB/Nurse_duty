@@ -126,16 +126,20 @@ def normalize_shift_code(value: str | None) -> tuple[str | None, str]:
 
 
 def normalize_rows(payload: dict, row_index: int | None = None) -> list[dict]:
+    """rowIndex를 유일한 식별자로 사용한다. name은 표시용 메타데이터."""
     rows = payload.get("rows", [])
     if not isinstance(rows, list):
         raise ValueError("rows 필드가 배열이 아니에요.")
 
-    parsed_by_name: dict[str, dict] = {}
+    parsed_by_index: dict[int, dict] = {}
     for row in rows:
         if not isinstance(row, dict):
             continue
-        name = str(row.get("name", "")).strip()
-        if name not in ROW_NAMES or name in parsed_by_name:
+        try:
+            idx = int(row.get("rowIndex", 0))
+        except (TypeError, ValueError):
+            continue
+        if not (1 <= idx <= 16) or idx in parsed_by_index:
             continue
         shifts = row.get("shifts", [])
         if not isinstance(shifts, list):
@@ -155,8 +159,10 @@ def normalize_rows(payload: dict, row_index: int | None = None) -> list[dict]:
             normalized_shifts.append(shift)
             raw_tokens.append(raw)
 
-        parsed_by_name[name] = {
-            "rowIndex": ROW_NAMES.index(name) + 1,
+        # name은 이미지에서 Claude가 읽은 값으로 저장 (표시용)
+        name = str(row.get("name", "")).strip()
+        parsed_by_index[idx] = {
+            "rowIndex": idx,
             "name": name,
             "recognizedDays": recognized,
             "shifts": normalized_shifts,
@@ -165,12 +171,12 @@ def normalize_rows(payload: dict, row_index: int | None = None) -> list[dict]:
         }
 
     normalized = []
-    for index, name in enumerate(ROW_NAMES, start=1):
-        item = parsed_by_name.get(name)
+    for idx in range(1, 17):
+        item = parsed_by_index.get(idx)
         if item is None:
             item = {
-                "rowIndex": index,
-                "name": name,
+                "rowIndex": idx,
+                "name": "",
                 "recognizedDays": 0,
                 "shifts": [None] * 30,
                 "rawTokens": [None] * 30,
@@ -246,19 +252,19 @@ Rules:
     """.strip()
 
 
-def build_row_refine_prompt(year: int, month: int, row_name: str, row_index: int) -> str:
+def build_row_refine_prompt(year: int, month: int, row_index: int) -> str:
     return f"""
 You are re-reading ONE specific nurse row from a Korean hospital duty roster.
 
 Context:
 - Hint year: {year}, Hint month: {month}
-- The first image shows the whole table with the target row highlighted.
+- The first image shows the whole table with the target row highlighted in red.
 - The second image is a focused crop that includes the day header and the target row.
-- Read ONLY the highlighted/target row for nurse "{row_name}" (rowIndex {row_index}).
+- Read ONLY the highlighted row (rowIndex {row_index}, counted top-to-bottom from the first data row).
 
 Task:
 1. Use the day header to align day 1 through day 30.
-2. Read the target row only, from left to right, as one continuous spatial sequence.
+2. Read the highlighted row only, from left to right, as one continuous spatial sequence.
 3. Use neighboring visual context only to identify the correct row and cell boundaries.
 4. Do not infer from scheduling patterns, neighboring rows, or neighboring days.
 5. If a cell is illegible, return null for that cell only.
@@ -266,7 +272,6 @@ Task:
 Return ONLY valid JSON:
 {{
   "rowIndex": {row_index},
-  "name": "{row_name}",
   "shifts": ["D", "E", "OFF", ... exactly 30 items]
 }}
 
@@ -399,7 +404,7 @@ def request_row_refinement(
     source_format: str,
     ssl_context: ssl.SSLContext,
 ) -> dict | None:
-    prompt = build_row_refine_prompt(year, month, row_box["name"], row_box["rowIndex"])
+    prompt = build_row_refine_prompt(year, month, row_box["rowIndex"])
     focus_crop = crop_row_strip(rectified, row_box, include_header=True)
     highlight_image = build_row_highlight_image(rectified, row_box)
     payload = {
