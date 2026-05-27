@@ -27,13 +27,16 @@ def _table_url():
     return f"{base}/rest/v1/duty_rooms"
 
 
-def _insert_room(code: str, row_index: int, shifts: dict) -> None:
+def _upsert_room(code: str, row_index: int, shifts: dict) -> None:
     url = _table_url()
     payload = json.dumps({"code": code, "row_index": row_index, "shifts": shifts}).encode()
     req = urllib.request.Request(
         url,
         data=payload,
-        headers={**_supabase_headers(), "Prefer": "return=minimal"},
+        headers={
+            **_supabase_headers(),
+            "Prefer": "return=minimal,resolution=merge-duplicates",
+        },
         method="POST",
     )
     with urllib.request.urlopen(req, timeout=10):
@@ -57,23 +60,18 @@ def create_room():
     body = request.get_json(force=True, silent=True) or {}
     row_index = body.get("row_index")
     shifts = body.get("shifts")
+    existing_code = body.get("code", "").strip().upper() if isinstance(body.get("code"), str) else ""
 
     if not isinstance(row_index, int) or not isinstance(shifts, dict):
         return jsonify({"error": "row_index(int)와 shifts가 필요합니다."}), 400
 
-    for _ in range(5):
-        code = "".join(secrets.choice(ALPHABET) for _ in range(CODE_LEN))
-        try:
-            _insert_room(code, row_index, shifts)
-            return jsonify({"code": code})
-        except urllib.error.HTTPError as err:
-            if err.code == 409:
-                continue
-            return jsonify({"error": "서버 오류가 발생했어요."}), 500
-        except Exception:
-            return jsonify({"error": "서버 오류가 발생했어요."}), 500
-
-    return jsonify({"error": "코드 생성에 실패했어요. 다시 시도해 주세요."}), 500
+    # 기존 코드가 있으면 그대로 upsert, 없으면 새 코드 생성
+    code = existing_code or "".join(secrets.choice(ALPHABET) for _ in range(CODE_LEN))
+    try:
+        _upsert_room(code, row_index, shifts)
+        return jsonify({"code": code})
+    except Exception:
+        return jsonify({"error": "서버 오류가 발생했어요."}), 500
 
 
 @app.route("/api/share", methods=["GET"])

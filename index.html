@@ -552,10 +552,22 @@
       }
 
       .toast {
-        min-height: 20px;
-        color: var(--accent);
-        font: 700 13px/1.4 system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        position: fixed;
+        bottom: 28px;
+        left: 50%;
+        transform: translateX(-50%);
+        background: #1a2332;
+        color: #fff;
+        font: 600 14px/1.4 system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        padding: 10px 20px;
+        border-radius: 24px;
+        white-space: nowrap;
+        pointer-events: none;
+        opacity: 0;
+        transition: opacity 0.2s;
+        z-index: 9999;
       }
+      .toast.visible { opacity: 1; }
 
       .empty {
         padding: 18px;
@@ -1014,12 +1026,26 @@
         }
       }
 
+      const SHARE_CODES_KEY = "nurse-shift-board:share-codes";
+      function loadShareCodes() {
+        try { return JSON.parse(storage.getItem(SHARE_CODES_KEY) ?? "{}"); } catch { return {}; }
+      }
+      function saveShareCode(memberId, code) {
+        try {
+          const codes = loadShareCodes();
+          codes[memberId] = code;
+          storage.setItem(SHARE_CODES_KEY, JSON.stringify(codes));
+        } catch {}
+      }
+
       async function createShareCode() {
         const selectedId = dom.shareMemberSelect.value;
         const member = state.members.find(m => m.id === selectedId) ?? activeMember();
         if (!member) { setToast("팀원을 먼저 추가해 주세요."); return; }
         const shifts = getBucket(member.id);
         if (Object.keys(shifts).length === 0) { setToast("듀티를 먼저 입력해 주세요."); return; }
+
+        const existingCode = loadShareCodes()[member.id] ?? "";
 
         dom.shareCreateBtn.disabled = true;
         dom.shareStatus.textContent = "링크 생성 중...";
@@ -1029,14 +1055,17 @@
           const res = await fetch("/api/share", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ row_index: state.members.indexOf(member) + 1, shifts }),
+            body: JSON.stringify({ row_index: state.members.indexOf(member) + 1, shifts, code: existingCode }),
           });
           const data = await res.json();
           if (!res.ok) { dom.shareStatus.textContent = data.error ?? "오류가 발생했어요."; return; }
+          saveShareCode(member.id, data.code);
           dom.shareCodeText.textContent = data.code;
           dom.shareCodeWrap.style.display = "";
-          dom.shareStatus.textContent = "아래 버튼으로 카카오톡·문자로 바로 공유하세요!";
-          setToast("링크 생성 완료!");
+          dom.shareStatus.textContent = existingCode
+            ? "듀티가 업데이트됐어요. 기존 링크로 바로 확인 가능해요!"
+            : "아래 버튼으로 카카오톡·문자로 바로 공유하세요!";
+          setToast(existingCode ? "듀티 업데이트 완료!" : "링크 생성 완료!");
         } catch {
           dom.shareStatus.textContent = "네트워크 오류가 발생했어요.";
         } finally {
@@ -1626,9 +1655,10 @@
 
       function setToast(message) {
         dom.toast.textContent = message;
+        dom.toast.classList.add("visible");
         window.clearTimeout(setToast._timer);
         setToast._timer = window.setTimeout(() => {
-          dom.toast.textContent = "";
+          dom.toast.classList.remove("visible");
         }, 2200);
       }
 
