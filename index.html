@@ -284,12 +284,73 @@
         gap: 8px;
       }
 
-      .weekday-grid,
-      .day-grid {
+      .weekday-grid {
         display: grid;
-        grid-template-columns: repeat(7, minmax(0, 1fr));
+        grid-template-columns: 32px repeat(7, minmax(0, 1fr));
         gap: 6px;
       }
+
+      .day-grid {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+      }
+
+      /* ── Week-based calendar layout ── */
+      .cal-week { display: flex; flex-direction: column; gap: 2px; }
+
+      .cal-num-row,
+      .cal-badge-row {
+        display: grid;
+        grid-template-columns: 32px repeat(7, minmax(0, 1fr));
+        gap: 4px;
+      }
+
+      .cal-num {
+        text-align: center;
+        font: 600 11px/1 system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        color: var(--muted);
+        padding: 2px 0;
+      }
+      .cal-num.is-today { color: var(--accent); font-weight: 700; }
+
+      .cal-name-stack {
+        display: flex;
+        flex-direction: column;
+        align-items: flex-end;
+        justify-content: center;
+        gap: 8px;
+        padding-right: 4px;
+      }
+      .cal-name-stack span {
+        font: 700 10px/1 system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      }
+      .cal-name-m1 { color: var(--accent); }
+      .cal-name-m2 { color: #f97316; }
+
+      .cal-day {
+        background: rgba(255, 255, 255, 0.68);
+        border: 1px solid rgba(24, 32, 42, 0.09);
+        border-radius: 10px;
+        min-height: 56px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 4px;
+        cursor: pointer;
+        padding: 4px 2px;
+        transition: transform 0.15s ease, border-color 0.15s ease;
+        touch-action: manipulation;
+      }
+      .cal-day:hover { transform: translateY(-1px); border-color: rgba(28, 124, 122, 0.3); }
+      .cal-day.is-muted { opacity: 0.25; pointer-events: none; }
+      .cal-day.is-selected {
+        border-color: rgba(28, 124, 122, 0.7);
+        box-shadow: 0 0 0 3px rgba(28, 124, 122, 0.09);
+      }
+      .cal-day.is-today { background: rgba(28, 124, 122, 0.06); }
+      .cal-day.is-empty { background: transparent; border-color: transparent; cursor: default; }
 
       .weekday {
         color: var(--muted);
@@ -339,11 +400,10 @@
       }
 
       .day-badge {
-        align-self: flex-start;
-        padding: 7px 10px;
+        padding: 5px 9px;
         border-radius: 999px;
         color: white;
-        font: 700 12px/1 system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        font: 700 11px/1 system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
         letter-spacing: 0.02em;
       }
 
@@ -499,8 +559,7 @@
           grid-template-columns: 1fr;
         }
 
-        .weekday-grid,
-        .day-grid {
+        .weekday-grid {
           gap: 6px;
         }
       }
@@ -534,29 +593,25 @@
           letter-spacing: 0.06em;
         }
 
-        .day-grid {
-          gap: 2px;
-          grid-template-columns: repeat(7, minmax(0, 1fr));
-        }
+        .day-grid { gap: 2px; }
 
-        .day {
-          min-height: 88px;
-          padding: 6px 4px;
-          border-radius: 10px;
+        .cal-num-row,
+        .cal-badge-row { gap: 2px; }
+
+        .cal-num { font-size: 10px; }
+
+        .cal-name-stack { gap: 6px; padding-right: 3px; }
+        .cal-name-stack span { font-size: 9px; }
+
+        .cal-day {
+          min-height: 48px;
+          border-radius: 7px;
           gap: 3px;
-        }
-
-        .day-number {
-          font-size: 12px;
+          padding: 3px 2px;
         }
 
         .day-badge {
-          padding: 4px 5px;
-          font-size: 9px;
-        }
-
-        .day-shift-name,
-        .day-shift-empty {
+          padding: 3px 5px;
           font-size: 9px;
         }
 
@@ -950,7 +1005,7 @@
       }
 
       function renderWeekdays() {
-        dom.weekdayGrid.innerHTML = WEEKDAYS.map((day) => `<div class="weekday">${day}</div>`).join("");
+        dom.weekdayGrid.innerHTML = '<div></div>' + WEEKDAYS.map((day) => `<div class="weekday">${day}</div>`).join("");
       }
 
       function renderTeam() {
@@ -997,54 +1052,59 @@
         const firstOfMonth = new Date(year, month, 1);
         const startDay = firstOfMonth.getDay();
         const daysInMonth = new Date(year, month + 1, 0).getDate();
-        const prevMonthDays = new Date(year, month, 0).getDate();
         const totalCells = Math.ceil((startDay + daysInMonth) / 7) * 7;
+        const weeks = totalCells / 7;
+        const todayIso = isoDate(new Date());
+        const memberColors = ["cal-name-m1", "cal-name-m2"];
 
         dom.monthLabel.textContent = firstOfMonth.toLocaleDateString("ko-KR", { year: "numeric", month: "long" });
         dom.monthHint.textContent = `${members.map((member) => member.name).join(" · ")}의 듀티를 한 달력에서 같이 볼 수 있어요.`;
 
-        const cells = [];
-        for (let index = 0; index < totalCells; index += 1) {
-          const dayNumber = index - startDay + 1;
-          let date;
-          let muted = false;
+        let html = "";
+        for (let w = 0; w < weeks; w++) {
+          html += '<div class="cal-week">';
 
-          if (dayNumber < 1) {
-            date = new Date(year, month - 1, prevMonthDays + dayNumber);
-            muted = true;
-          } else if (dayNumber > daysInMonth) {
-            date = new Date(year, month + 1, dayNumber - daysInMonth);
-            muted = true;
-          } else {
-            date = new Date(year, month, dayNumber);
+          // 날짜 숫자 행
+          html += '<div class="cal-num-row"><div></div>';
+          for (let d = 0; d < 7; d++) {
+            const dayNumber = w * 7 + d - startDay + 1;
+            const inMonth = dayNumber >= 1 && dayNumber <= daysInMonth;
+            const iso = inMonth ? isoDate(new Date(year, month, dayNumber)) : null;
+            const isToday = iso === todayIso;
+            html += `<div class="cal-num${isToday ? " is-today" : ""}">${inMonth ? dayNumber : ""}</div>`;
           }
+          html += "</div>";
 
-          const iso = isoDate(date);
-          const isSelected = state.selectedDate === iso;
-          const isToday = iso === isoDate(new Date());
-          const rows = members
-            .map((member) => {
+          // 뱃지 행
+          html += '<div class="cal-badge-row">';
+          // 이름 레이블
+          html += '<div class="cal-name-stack">';
+          members.forEach((member, i) => {
+            html += `<span class="${memberColors[i] || "cal-name-m2"}">${escapeHtml(member.name)}</span>`;
+          });
+          html += "</div>";
+
+          // 날짜 셀
+          for (let d = 0; d < 7; d++) {
+            const dayNumber = w * 7 + d - startDay + 1;
+            const inMonth = dayNumber >= 1 && dayNumber <= daysInMonth;
+            if (!inMonth) {
+              html += '<div class="cal-day is-empty"></div>';
+              continue;
+            }
+            const iso = isoDate(new Date(year, month, dayNumber));
+            const isSelected = state.selectedDate === iso;
+            const isToday = iso === todayIso;
+            const badges = members.map((member) => {
               const shift = getShift(member.id, iso);
-              return `
-                <div class="day-shift-row">
-                  <span class="day-shift-name">${escapeHtml(member.name)}</span>
-                  ${shift ? `<div class="day-badge ${SHIFT_CLASS[shift]}">${SHIFT_LABELS[shift]}</div>` : `<span class="day-shift-empty">-</span>`}
-                </div>
-              `;
-            })
-            .join("");
-          cells.push(`
-            <button class="day ${muted ? "is-muted" : ""} ${isSelected ? "is-selected" : ""}" data-date="${iso}">
-              <div class="day-number">
-                <span>${date.getDate()}</span>
-                <span style="color:${isToday ? "var(--accent)" : "var(--muted)"}">${isToday ? "Today" : ""}</span>
-              </div>
-              <div class="day-shift-list">${rows}</div>
-            </button>
-          `);
+              return shift ? `<div class="day-badge ${SHIFT_CLASS[shift]}">${SHIFT_LABELS[shift]}</div>` : "";
+            }).join("");
+            html += `<button class="cal-day${isSelected ? " is-selected" : ""}${isToday ? " is-today" : ""}" data-date="${iso}">${badges}</button>`;
+          }
+          html += "</div></div>";
         }
 
-        dom.dayGrid.innerHTML = cells.join("");
+        dom.dayGrid.innerHTML = html;
         dom.dayGrid.querySelectorAll("[data-date]").forEach((button) => {
           button.addEventListener("click", () => {
             setSelectedDate(button.dataset.date);
