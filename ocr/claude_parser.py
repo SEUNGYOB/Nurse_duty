@@ -9,14 +9,19 @@ import urllib.error
 import urllib.request
 from pathlib import Path
 
-from PIL import Image
+from PIL import Image, ImageDraw
 
 from .duty_parser import (
     DEFAULT_TEMPLATE,
     ROW_NAMES,
+    auto_orient_duty_image,
+    build_schedule_boxes_from_bounds,
     build_schedule_boxes,
+    detect_schedule_line_bounds,
     detect_table_box,
     guess_month_and_year,
+    get_schedule_geometry,
+    load_image_rgb,
     make_debug_overlay,
     rectify_table,
 )
@@ -178,10 +183,21 @@ def normalize_rows(payload: dict, row_index: int | None = None) -> list[dict]:
     return normalized
 
 
-def build_prompt(year: int, month: int) -> str:
+def build_prompt(year: int, month: int, with_row_guides: bool = False) -> str:
     names_blob = "\n".join(f"{i+1}. {name}" for i, name in enumerate(ROW_NAMES))
+    image_note = (
+        "Two images are attached:\n"
+        "  Image 1: original photo (use this to read the title for year/month).\n"
+        "  Image 2: same table rectified, with blue horizontal lines drawn at the detected row boundaries.\n"
+        "  Use the blue boundary lines in Image 2 to precisely identify which cells belong to each nurse row.\n"
+        "  Each band between two consecutive blue lines = one nurse row."
+        if with_row_guides else
+        "One image is attached: the original duty roster photo."
+    )
     return f"""
 You are reading a Korean hospital nurse duty roster table photographed with a phone camera.
+
+{image_note}
 
 Context hint (override with what you actually see in the image title):
 - Hint year: {year}, Hint month: {month}
@@ -191,12 +207,14 @@ Context hint (override with what you actually see in the image title):
 - "off" written in lowercase in the original image should be returned as OFF.
 
 Your task:
-1. If the image shows a title like "2026년 6월 근무표", read the actual year and month from it.
+1. If Image 1 shows a title like "2026년 6월 근무표", read the actual year and month from it.
    Otherwise use the hint values above.
 2. Read every cell for ALL 16 nurses listed below.
 3. Use the header row's day numbers to align each cell to the correct day (1~30).
-4. If a cell is illegible, return null for that specific cell only (do not null out the whole row).
-5. Do not guess or infer from neighboring cells or scheduling patterns.
+4. For each nurse row, trace the 30 day cells from left to right as one continuous spatial sequence.
+5. Use neighboring cells only to infer cell boundaries and positions in space, not to infer the duty value.
+6. If a cell is illegible, return null for that specific cell only (do not null out the whole row).
+7. Do not guess or infer from neighboring cells or scheduling patterns.
 
 Nurses (in this exact order):
 {names_blob}
@@ -221,15 +239,72 @@ Rules:
 - Valid shift values: D, E, N, S, Y, OFF — always uppercase, never null unless truly illegible.
 - rowIndex is 1-based matching the order above.
 - Do not skip any nurse row.
+- "Continuous" means spatial continuity of adjacent cell positions and borders, not continuity of the work schedule contents.
+- Do not shift values left or right to make a row look more regular.
+- Do not copy values from the row above or below.
+- Internally verify each row by checking that day 1 through day 30 are assigned to 30 distinct adjacent cells in left-to-right order.
+    """.strip()
+
+
+def build_row_refine_prompt(year: int, month: int, row_name: str, row_index: int) -> str:
+    return f"""
+You are re-reading ONE specific nurse row from a Korean hospital duty roster.
+
+Context:
+- Hint year: {year}, Hint month: {month}
+- The first image shows the whole table with the target row highlighted.
+- The second image is a focused crop that includes the day header and the target row.
+- Read ONLY the highlighted/target row for nurse "{row_name}" (rowIndex {row_index}).
+
+Task:
+1. Use the day header to align day 1 through day 30.
+2. Read the target row only, from left to right, as one continuous spatial sequence.
+3. Use neighboring visual context only to identify the correct row and cell boundaries.
+4. Do not infer from scheduling patterns, neighboring rows, or neighboring days.
+5. If a cell is illegible, return null for that cell only.
+
+Return ONLY valid JSON:
+{{
+  "rowIndex": {row_index},
+  "name": "{row_name}",
+  "shifts": ["D", "E", "OFF", ... exactly 30 items]
+}}
+
+Rules:
+- shifts must contain exactly 30 items.
+- Valid values are D, E, N, S, Y, OFF, or null.
+- "Continuous" means spatial continuity of adjacent cells, not continuity of the schedule contents.
+- Do not copy values from rows above or below.
+- Do not shift values left or right to make the row look more regular.
 """.strip()
 
 
-def crop_row_strip(rectified: Image.Image, row: dict) -> Image.Image:
+def crop_row_strip(rectified: Image.Image, row: dict, *, include_header: bool = False) -> Image.Image:
     left = 0
     right = rectified.width
-    top = max(0, min(box[1] for box in row["cellBoxes"]) - 12)
-    bottom = min(rectified.height, max(box[3] for box in row["cellBoxes"]) + 12)
+    row_top = min(box[1] for box in row["cellBoxes"])
+    row_bottom = max(box[3] for box in row["cellBoxes"])
+
+    if include_header:
+        schedule_top = get_schedule_geometry(DEFAULT_TEMPLATE)["top"]
+        top = max(0, schedule_top - 12)
+    else:
+        top = max(0, row_top - 12)
+
+    bottom = min(rectified.height, row_bottom + 12)
     return rectified.crop((left, top, right, bottom))
+
+
+def build_row_highlight_image(rectified: Image.Image, row: dict) -> Image.Image:
+    image = rectified.convert("RGB").copy()
+    draw = ImageDraw.Draw(image, "RGBA")
+    left = min(box[0] for box in row["cellBoxes"]) - 6
+    top = min(box[1] for box in row["cellBoxes"]) - 6
+    right = max(box[2] for box in row["cellBoxes"]) + 6
+    bottom = max(box[3] for box in row["cellBoxes"]) + 6
+    draw.rounded_rectangle((left, top, right, bottom), radius=12, outline=(220, 38, 38, 255), width=8)
+    draw.rounded_rectangle((left, top, right, bottom), radius=12, fill=(220, 38, 38, 28))
+    return image
 
 
 def build_ssl_context() -> ssl.SSLContext:
@@ -255,62 +330,45 @@ def crop_table_for_claude(image: Image.Image, table_box: tuple[int, int, int, in
     return image
 
 
-def parse_duty_image_with_claude(
-    image_bytes: bytes,
-    filename: str,
-    row_index: int | None = None,
-    source_format: str = "image",
-    include_debug: bool = False,
-    year: int | None = None,
-    month: int | None = None,
-) -> dict:
-    api_key = os.environ.get("ANTHROPIC_API_KEY")
-    if not api_key:
-        raise RuntimeError("ANTHROPIC_API_KEY is not set")
+def annotate_row_boundaries(
+    rectified: Image.Image,
+    y_bounds: list[int],
+    template: DutySheetTemplate = DEFAULT_TEMPLATE,
+    max_width: int = 2400,
+) -> Image.Image:
+    """감지된 행 경계를 파란 선으로 그린 rectified 이미지를 반환한다.
 
-    import io
+    좌우 끝은 종이 곡률로 실제 격자선과 어긋날 수 있으므로
+    스케줄 영역 x 범위 안쪽 5%만 그린다.
+    """
+    annotated = rectified.convert("RGB").copy()
+    draw = ImageDraw.Draw(annotated)
+    geometry = get_schedule_geometry(template)
+    y_offset = int(geometry["top"])
+    margin = int((geometry["right"] - geometry["left"]) * 0.07)
+    x_start = int(geometry["left"]) + margin
+    x_end = int(geometry["right"]) - margin
 
-    image = Image.open(io.BytesIO(image_bytes)).convert("RGB")
-    guessed_year, guessed_month = guess_month_and_year(filename)
-    if year is None:
-        year = guessed_year
-    if month is None:
-        month = guessed_month
-    table_box = detect_table_box(image)
-    rectified = rectify_table(image, table_box, DEFAULT_TEMPLATE.table_size)
+    for bound_y in y_bounds:
+        y = y_offset + int(bound_y)
+        if 0 <= y < annotated.height:
+            draw.line([(x_start, y), (x_end, y)], fill=(30, 120, 255), width=3)
 
-    table_crop = crop_table_for_claude(image, table_box)
+    if annotated.width > max_width:
+        scale = max_width / annotated.width
+        annotated = annotated.resize(
+            (max_width, int(annotated.height * scale)), Image.Resampling.LANCZOS
+        )
+    return annotated
 
-    ssl_context = build_ssl_context()
 
-    payload = {
-        "model": DEFAULT_ANTHROPIC_MODEL,
-        "max_tokens": 4096,
-        "temperature": 0,
-        "messages": [
-            {
-                "role": "user",
-                "content": [
-                    {"type": "text", "text": build_prompt(year, month)},
-                    {
-                        "type": "image",
-                        "source": {
-                            "type": "base64",
-                            "media_type": "image/jpeg",
-                            "data": pil_to_base64(table_crop, "JPEG"),
-                        },
-                    },
-                ],
-            }
-        ],
-    }
-
+def send_claude_request(payload: dict, ssl_context: ssl.SSLContext) -> dict:
     request = urllib.request.Request(
         ANTHROPIC_API_URL,
         data=json.dumps(payload).encode("utf-8"),
         headers={
             "content-type": "application/json",
-            "x-api-key": api_key,
+            "x-api-key": os.environ.get("ANTHROPIC_API_KEY", ""),
             "anthropic-version": "2023-06-01",
         },
         method="POST",
@@ -318,7 +376,7 @@ def parse_duty_image_with_claude(
 
     try:
         with urllib.request.urlopen(request, timeout=180, context=ssl_context) as response:
-            response_json = json.loads(response.read().decode("utf-8"))
+            return json.loads(response.read().decode("utf-8"))
     except urllib.error.HTTPError as error:
         detail = error.read().decode("utf-8", "ignore")
         raise RuntimeError(f"Claude API request failed: {detail}") from error
@@ -330,6 +388,107 @@ def parse_duty_image_with_claude(
             ) from error
         raise RuntimeError(f"Claude API connection failed: {error}") from error
 
+
+def request_row_refinement(
+    rectified: Image.Image,
+    row_box: dict,
+    *,
+    year: int,
+    month: int,
+    filename: str,
+    source_format: str,
+    ssl_context: ssl.SSLContext,
+) -> dict | None:
+    prompt = build_row_refine_prompt(year, month, row_box["name"], row_box["rowIndex"])
+    focus_crop = crop_row_strip(rectified, row_box, include_header=True)
+    highlight_image = build_row_highlight_image(rectified, row_box)
+    payload = {
+        "model": DEFAULT_ANTHROPIC_MODEL,
+        "max_tokens": 2048,
+        "temperature": 0,
+        "messages": [
+            {
+                "role": "user",
+                "content": [
+                    {"type": "text", "text": prompt},
+                    build_row_content_block(highlight_image, filename, source_format),
+                    build_row_content_block(focus_crop, filename, source_format),
+                ],
+            }
+        ],
+    }
+    response_json = send_claude_request(payload, ssl_context)
+    payload_json = extract_json_payload(extract_text_blocks(response_json))
+    normalized = normalize_rows({"rows": [payload_json]}, row_index=row_box["rowIndex"])
+    return normalized[0] if normalized else None
+
+
+def parse_duty_image_with_claude(
+    image_bytes: bytes,
+    filename: str,
+    row_index: int | None = None,
+    source_format: str = "image",
+    include_debug: bool = False,
+    year: int | None = None,
+    month: int | None = None,
+    refine_row_indices: list[int] | None = None,
+) -> dict:
+    api_key = os.environ.get("ANTHROPIC_API_KEY")
+    if not api_key:
+        raise RuntimeError("ANTHROPIC_API_KEY is not set")
+
+    import io
+
+    image = load_image_rgb(image_bytes)
+    image, rotation_applied = auto_orient_duty_image(image)
+    guessed_year, guessed_month = guess_month_and_year(filename)
+    if year is None:
+        year = guessed_year
+    if month is None:
+        month = guessed_month
+    table_box = detect_table_box(image)
+    rectified = rectify_table(image, table_box, DEFAULT_TEMPLATE.table_size)
+    _, y_bounds, x_bounds = detect_schedule_line_bounds(rectified, DEFAULT_TEMPLATE)
+    rows_for_overlay = build_schedule_boxes_from_bounds(DEFAULT_TEMPLATE, y_bounds, x_bounds)
+    if not rows_for_overlay or not rows_for_overlay[0].get("cellBoxes"):
+        rows_for_overlay = build_schedule_boxes(DEFAULT_TEMPLATE)
+
+    table_crop = crop_table_for_claude(image, table_box)
+    annotated = annotate_row_boundaries(rectified, y_bounds, DEFAULT_TEMPLATE)
+
+    ssl_context = build_ssl_context()
+
+    payload = {
+        "model": DEFAULT_ANTHROPIC_MODEL,
+        "max_tokens": 4096,
+        "temperature": 0,
+        "messages": [
+            {
+                "role": "user",
+                "content": [
+                    {"type": "text", "text": build_prompt(year, month, with_row_guides=True)},
+                    {
+                        "type": "image",
+                        "source": {
+                            "type": "base64",
+                            "media_type": "image/jpeg",
+                            "data": pil_to_base64(table_crop, "JPEG"),
+                        },
+                    },
+                    {
+                        "type": "image",
+                        "source": {
+                            "type": "base64",
+                            "media_type": "image/jpeg",
+                            "data": pil_to_base64(annotated, "JPEG"),
+                        },
+                    },
+                ],
+            }
+        ],
+    }
+
+    response_json = send_claude_request(payload, ssl_context)
     response_text = extract_text_blocks(response_json)
     parsed_payload = extract_json_payload(response_text)
 
@@ -349,6 +508,35 @@ def parse_duty_image_with_claude(
 
     rows = normalize_rows(parsed_payload)
 
+    refine_debug: list[dict] = []
+    if refine_row_indices:
+        by_index = {row["rowIndex"]: row for row in rows}
+        overlay_by_index = {row["rowIndex"]: row for row in rows_for_overlay}
+        for target_index in sorted(set(idx for idx in refine_row_indices if 1 <= idx <= 16)):
+            row_box = overlay_by_index.get(target_index)
+            if not row_box:
+                continue
+            refined = request_row_refinement(
+                rectified,
+                row_box,
+                year=year,
+                month=month,
+                filename=filename,
+                source_format=source_format,
+                ssl_context=ssl_context,
+            )
+            if refined is None:
+                continue
+            by_index[target_index] = refined
+            refine_debug.append(
+                {
+                    "rowIndex": target_index,
+                    "name": refined["name"],
+                    "recognizedDays": refined["recognizedDays"],
+                }
+            )
+        rows = [by_index[index] for index in sorted(by_index)]
+
     if row_index is not None:
         rows = [row for row in rows if row["rowIndex"] == row_index]
 
@@ -364,9 +552,10 @@ def parse_duty_image_with_claude(
             "parser": "claude",
             "model": DEFAULT_ANTHROPIC_MODEL,
             "sourceFormat": source_format,
+            "rotationApplied": rotation_applied,
+            "refinedRows": refine_debug,
         },
     }
     if include_debug:
-        rows_for_overlay = build_schedule_boxes(DEFAULT_TEMPLATE)
         result["debugImage"] = make_debug_overlay(image, rectified, table_box, rows_for_overlay, rows)
     return result

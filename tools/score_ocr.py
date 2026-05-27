@@ -295,22 +295,24 @@ def main() -> None:
     image_bytes = SAMPLE_IMAGE.read_bytes()
     answer = load_answer_key()
 
-    # ── Claude ──
-    print("\n[1/2] Claude Vision 실행 중...")
+    # ── Claude (baseline) ──
+    print("\n[1/3] Claude Vision (기본) 실행 중...")
     claude_result = parse_duty_image_with_claude(image_bytes, SAMPLE_IMAGE.name)
-    score("Claude Vision (claude-sonnet-4)", claude_result, answer)
+    score("Claude Vision — 기본 (재판독 없음)", claude_result, answer)
 
-    # ── Google Vision ──
-    print("\n[2/2] Google Vision 실행 중...")
-    google_result = parse_duty_image_with_google_full(image_bytes)
-    score("Google Vision (document_text_detection)", google_result, answer)
+    # ── Claude (refine row 4) ──
+    print("\n[2/3] Claude Vision (rowIndex=4 재판독) 실행 중...")
+    claude_refined = parse_duty_image_with_claude(
+        image_bytes, SAMPLE_IMAGE.name, refine_row_indices=[4]
+    )
+    score("Claude Vision — 재판독 rowIndex=4 (장해진)", claude_refined, answer)
 
     # 저장
-    out_c = ROOT / "scratch" / "ocr-debug" / "result_claude.json"
-    out_g = ROOT / "scratch" / "ocr-debug" / "result_google.json"
-    out_c.write_text(json.dumps(claude_result, ensure_ascii=False, indent=2))
-    out_g.write_text(json.dumps(google_result, ensure_ascii=False, indent=2))
-    print(f"\n결과 저장: {out_c.name}, {out_g.name}")
+    out_dir = ROOT / "scratch" / "ocr-debug"
+    out_dir.mkdir(parents=True, exist_ok=True)
+    (out_dir / "result_claude.json").write_text(json.dumps(claude_result, ensure_ascii=False, indent=2))
+    (out_dir / "result_claude_refined.json").write_text(json.dumps(claude_refined, ensure_ascii=False, indent=2))
+    print(f"\n결과 저장: result_claude.json, result_claude_refined.json")
 
 
 if __name__ == "__main__":
