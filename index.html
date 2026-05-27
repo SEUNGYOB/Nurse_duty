@@ -1200,11 +1200,6 @@
         dom.ocrStatus.textContent = `${year}년 ${month}월 · ${applied}일 반영 완료 (인식 ${row.recognizedDays}일)`;
         dom.ocrFileInput.value = "";
         dom.ocrFileName.textContent = "";
-        dom.ocrRecognizeBtn.disabled = true;
-        dom.ocrImportBtn.disabled = true;
-        _ocrAllRows = null;
-        dom.ocrRowWrap.style.display = "none";
-        dom.ocrRowSelect.innerHTML = "";
       }
 
       function renderAll() {
