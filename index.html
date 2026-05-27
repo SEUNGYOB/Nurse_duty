@@ -916,8 +916,8 @@
           state.currentYear = year;
           state.currentMonth = month - 1;
           renderAll();
-          setToast(`${row.name} 듀티 ${applied}일 가져왔어요.`);
-          dom.ocrStatus.textContent = `${applied}일 반영 완료 (인식 ${row.recognizedDays}일)`;
+          setToast(`${year}년 ${month}월 · ${row.name} 듀티 ${applied}일 가져왔어요.`);
+          dom.ocrStatus.textContent = `${year}년 ${month}월 · ${applied}일 반영 완료 (인식 ${row.recognizedDays}일)`;
           dom.ocrFileInput.value = "";
           dom.ocrFileName.textContent = "";
         } catch {

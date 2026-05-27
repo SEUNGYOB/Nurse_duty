@@ -246,14 +246,13 @@ def build_ssl_context() -> ssl.SSLContext:
 
 
 def crop_table_for_claude(image: Image.Image, table_box: tuple[int, int, int, int]) -> Image.Image:
-    """Crop and resize the full table to a reasonable size for Claude."""
-    cropped = image.crop(table_box)
+    """Resize the full image for Claude so the title row ("2026년 6월 근무표") is visible."""
     max_width = 2400
-    if cropped.width > max_width:
-        scale = max_width / cropped.width
-        new_size = (max_width, int(cropped.height * scale))
-        cropped = cropped.resize(new_size, Image.Resampling.LANCZOS)
-    return cropped
+    if image.width > max_width:
+        scale = max_width / image.width
+        new_size = (max_width, int(image.height * scale))
+        return image.resize(new_size, Image.Resampling.LANCZOS)
+    return image
 
 
 def parse_duty_image_with_claude(
