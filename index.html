@@ -714,25 +714,27 @@
               </div>
             </div>
 
-            <div style="margin-bottom: 10px">
-              <div class="subtle" style="margin-bottom: 6px">내 행 번호 (근무표에서 몇 번째 줄?)</div>
+            <button class="btn btn-secondary" style="width:100%;margin-bottom:8px" id="ocrRecognizeBtn" disabled>인식하기</button>
+
+            <div style="margin-bottom: 10px" id="ocrRowWrap">
+              <div class="subtle" style="margin-bottom: 6px">내 이름 선택</div>
               <select id="ocrRowSelect" class="field" style="cursor:pointer">
-                <option value="1">1번 · 윤미영</option>
-                <option value="2">2번 · 구명임</option>
-                <option value="3">3번 · 이현진</option>
-                <option value="4">4번 · 장해진</option>
-                <option value="5">5번 · 이영미</option>
-                <option value="6">6번 · 이경순</option>
-                <option value="7">7번 · 김향수</option>
-                <option value="8">8번 · 최은영</option>
-                <option value="9">9번 · 유정숙</option>
-                <option value="10">10번 · 이은우</option>
-                <option value="11">11번 · 김영애</option>
-                <option value="12">12번 · 양일향</option>
-                <option value="13">13번 · 김우섭</option>
-                <option value="14">14번 · 김주희</option>
-                <option value="15">15번 · 김성남</option>
-                <option value="16">16번 · 김우진</option>
+                <option value="1">1번</option>
+                <option value="2">2번</option>
+                <option value="3">3번</option>
+                <option value="4">4번</option>
+                <option value="5">5번</option>
+                <option value="6">6번</option>
+                <option value="7">7번</option>
+                <option value="8">8번</option>
+                <option value="9">9번</option>
+                <option value="10">10번</option>
+                <option value="11">11번</option>
+                <option value="12">12번</option>
+                <option value="13">13번</option>
+                <option value="14">14번</option>
+                <option value="15">15번</option>
+                <option value="16">16번</option>
               </select>
             </div>
 
@@ -864,6 +866,8 @@
         ocrYearSelect: document.getElementById("ocrYearSelect"),
         ocrMonthSelect: document.getElementById("ocrMonthSelect"),
         ocrRowSelect: document.getElementById("ocrRowSelect"),
+        ocrRowWrap: document.getElementById("ocrRowWrap"),
+        ocrRecognizeBtn: document.getElementById("ocrRecognizeBtn"),
         ocrImportBtn: document.getElementById("ocrImportBtn"),
         ocrFileName: document.getElementById("ocrFileName"),
         ocrStatus: document.getElementById("ocrStatus"),
@@ -917,6 +921,10 @@
         dom.ocrRowSelect.value   = prefs.row   ?? "1";
       })();
 
+      function loadOcrPrefs() {
+        try { return JSON.parse(storage.getItem(OCR_PREFS_KEY) ?? "{}"); } catch { return {}; }
+      }
+
       function saveOcrPrefs() {
         try {
           storage.setItem(OCR_PREFS_KEY, JSON.stringify({
@@ -953,10 +961,14 @@
       dom.ocrFileInput.addEventListener("change", () => {
         const file = dom.ocrFileInput.files[0];
         dom.ocrFileName.textContent = file ? file.name : "";
-        dom.ocrImportBtn.disabled = !file;
+        dom.ocrRecognizeBtn.disabled = !file;
+        dom.ocrImportBtn.disabled = true;
         dom.ocrStatus.textContent = "";
+        _ocrAllRows = null;
+        resetRowDropdown();
       });
 
+      dom.ocrRecognizeBtn.addEventListener("click", recognizeOcr);
       dom.ocrImportBtn.addEventListener("click", importFromOcr);
 
       dom.shareCreateBtn.addEventListener("click", createShareCode);
@@ -1098,98 +1110,124 @@
         });
       }
 
-      async function importFromOcr() {
-        const member = activeMember();
-        if (!member) {
-          setToast("팀원을 먼저 추가해 주세요.");
-          return;
+      let _ocrAllRows = null;
+
+      function resetRowDropdown() {
+        const sel = dom.ocrRowSelect;
+        sel.innerHTML = Array.from({ length: 16 }, (_, i) =>
+          `<option value="${i + 1}">${i + 1}번</option>`
+        ).join("");
+        const saved = loadOcrPrefs().row ?? "1";
+        sel.value = saved;
+      }
+
+      async function _streamOcr(formData) {
+        const res = await fetch("/api/parse-duty", { method: "POST", body: formData });
+        if (!res.ok || !res.body) {
+          const data = await res.json().catch(() => ({}));
+          throw new Error(data.error ?? res.status);
         }
+        const reader = res.body.getReader();
+        const decoder = new TextDecoder();
+        let buffer = "";
+        outer: while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+          buffer += decoder.decode(value, { stream: true });
+          const lines = buffer.split("\n");
+          buffer = lines.pop() ?? "";
+          for (const line of lines) {
+            if (!line.startsWith("data: ")) continue;
+            let event;
+            try { event = JSON.parse(line.slice(6)); } catch { continue; }
+            if (event.type === "progress") {
+              dom.ocrStatus.textContent = event.message;
+            } else if (event.type === "result") {
+              return event.data;
+            } else if (event.type === "error") {
+              throw new Error(event.message);
+            }
+          }
+        }
+        throw new Error("결과를 읽지 못했어요.");
+      }
+
+      async function recognizeOcr() {
         const file = dom.ocrFileInput.files[0];
         if (!file) return;
 
+        dom.ocrRecognizeBtn.disabled = true;
         dom.ocrImportBtn.disabled = true;
+        _ocrAllRows = null;
         dom.ocrStatus.textContent = "이미지 압축 중...";
-        const compressed = await compressImage(file);
-        const sizeMB = (compressed.size / 1024 / 1024).toFixed(1);
-        dom.ocrStatus.textContent = `OCR 처리 중... (${sizeMB}MB)`;
-
-        const formData = new FormData();
-        formData.append("file", compressed, file.name);
-        formData.append("rowIndex", dom.ocrRowSelect.value);
-        formData.append("year", dom.ocrYearSelect.value);
-        formData.append("month", dom.ocrMonthSelect.value);
 
         try {
-          const res = await fetch("/api/parse-duty", { method: "POST", body: formData });
-          if (!res.ok || !res.body) {
-            const data = await res.json().catch(() => ({}));
-            dom.ocrStatus.textContent = `오류: ${data.error ?? res.status}`;
-            return;
-          }
+          const compressed = await compressImage(file);
+          const sizeMB = (compressed.size / 1024 / 1024).toFixed(1);
+          dom.ocrStatus.textContent = `인식 중... (${sizeMB}MB)`;
 
-          // SSE 스트림 읽기
-          const reader = res.body.getReader();
-          const decoder = new TextDecoder();
-          let buffer = "";
-          let result = null;
-          let hadError = false;
+          const formData = new FormData();
+          formData.append("file", compressed, file.name);
+          formData.append("year", dom.ocrYearSelect.value);
+          formData.append("month", dom.ocrMonthSelect.value);
 
-          outer: while (true) {
-            const { done, value } = await reader.read();
-            if (done) break;
-            buffer += decoder.decode(value, { stream: true });
-            const lines = buffer.split("\n");
-            buffer = lines.pop() ?? "";
-            for (const line of lines) {
-              if (!line.startsWith("data: ")) continue;
-              let event;
-              try { event = JSON.parse(line.slice(6)); } catch { continue; }
-              if (event.type === "progress") {
-                dom.ocrStatus.textContent = event.message;
-              } else if (event.type === "result") {
-                result = event.data;
-                break outer;
-              } else if (event.type === "error") {
-                dom.ocrStatus.textContent = `오류: ${event.message}`;
-                hadError = true;
-                break outer;
-              }
-            }
-          }
+          const result = await _streamOcr(formData);
+          const rows = result.rows ?? [];
+          if (!rows.length) { dom.ocrStatus.textContent = "행을 인식하지 못했어요."; return; }
 
-          if (hadError || !result) {
-            if (!hadError) dom.ocrStatus.textContent = "결과를 읽지 못했어요.";
-            return;
-          }
+          _ocrAllRows = result;
 
-          const row = result.rows?.[0];
-          if (!row) { dom.ocrStatus.textContent = "결과를 읽지 못했어요."; return; }
+          // 드롭다운에 이름 채우기
+          const sel = dom.ocrRowSelect;
+          sel.innerHTML = rows.map(row =>
+            `<option value="${row.rowIndex}">${row.rowIndex}번${row.name ? " · " + row.name : ""}</option>`
+          ).join("");
+          const savedRow = loadOcrPrefs().row ?? "1";
+          if ([...sel.options].some(o => o.value === savedRow)) sel.value = savedRow;
 
-          const { year, month } = result;
-          const daysInMonth = new Date(year, month, 0).getDate();
-          let applied = 0;
-          row.shifts.forEach((shift, index) => {
-            if (!shift) return;
-            const mapped = OCR_TO_SHIFT[shift] ?? null;
-            if (!mapped) return;
-            const day = index + 1;
-            if (day > daysInMonth) return;
-            setShift(member.id, isoDate(new Date(year, month - 1, day)), mapped);
-            applied++;
-          });
-
-          state.currentYear = year;
-          state.currentMonth = month - 1;
-          renderAll();
-          setToast(`${year}년 ${month}월 · ${row.name} 듀티 ${applied}일 가져왔어요.`);
-          dom.ocrStatus.textContent = `${year}년 ${month}월 · ${applied}일 반영 완료 (인식 ${row.recognizedDays}일)`;
-          dom.ocrFileInput.value = "";
-          dom.ocrFileName.textContent = "";
-        } catch {
-          dom.ocrStatus.textContent = "네트워크 오류가 발생했어요.";
+          dom.ocrImportBtn.disabled = false;
+          dom.ocrStatus.textContent = `${result.year}년 ${result.month}월 · ${rows.length}명 인식 완료. 이름을 선택 후 가져오기를 누르세요.`;
+        } catch (e) {
+          dom.ocrStatus.textContent = `오류: ${e.message}`;
         } finally {
-          dom.ocrImportBtn.disabled = !dom.ocrFileInput.files[0];
+          dom.ocrRecognizeBtn.disabled = !dom.ocrFileInput.files[0];
         }
+      }
+
+      async function importFromOcr() {
+        const member = activeMember();
+        if (!member) { setToast("팀원을 먼저 추가해 주세요."); return; }
+        if (!_ocrAllRows) { setToast("인식하기를 먼저 눌러주세요."); return; }
+
+        const selectedIndex = parseInt(dom.ocrRowSelect.value, 10);
+        const row = _ocrAllRows.rows?.find(r => r.rowIndex === selectedIndex);
+        if (!row) { dom.ocrStatus.textContent = "선택한 행을 찾지 못했어요."; return; }
+
+        const { year, month } = _ocrAllRows;
+        const daysInMonth = new Date(year, month, 0).getDate();
+        let applied = 0;
+        row.shifts.forEach((shift, index) => {
+          if (!shift) return;
+          const mapped = OCR_TO_SHIFT[shift] ?? null;
+          if (!mapped) return;
+          const day = index + 1;
+          if (day > daysInMonth) return;
+          setShift(member.id, isoDate(new Date(year, month - 1, day)), mapped);
+          applied++;
+        });
+
+        state.currentYear = year;
+        state.currentMonth = month - 1;
+        renderAll();
+        const label = row.name || `${row.rowIndex}번`;
+        setToast(`${year}년 ${month}월 · ${label} 듀티 ${applied}일 가져왔어요.`);
+        dom.ocrStatus.textContent = `${year}년 ${month}월 · ${applied}일 반영 완료 (인식 ${row.recognizedDays}일)`;
+        dom.ocrFileInput.value = "";
+        dom.ocrFileName.textContent = "";
+        dom.ocrRecognizeBtn.disabled = true;
+        dom.ocrImportBtn.disabled = true;
+        _ocrAllRows = null;
+        resetRowDropdown();
       }
 
       function renderAll() {

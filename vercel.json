@@ -1,7 +1,7 @@
 {
   "functions": {
     "api/parse-duty.py": {
-      "maxDuration": 60,
+      "maxDuration": 120,
       "memory": 1024
     },
     "api/share.py": {
