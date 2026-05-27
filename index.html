@@ -742,24 +742,31 @@
 
           <section class="card">
             <div class="section-title">공유</div>
-            <div class="empty" style="margin-bottom: 12px">코드를 만들어 상대방에게 보내거나, 상대방 코드를 입력해 함께 보세요.</div>
+            <div class="empty" style="margin-bottom: 12px">내 듀티 링크를 만들어 카카오톡·문자로 보내세요. 상대방이 링크를 열면 자동으로 함께 볼 수 있어요.</div>
 
-            <button class="btn btn-secondary" style="width:100%;margin-bottom:8px" id="shareCreateBtn">내 코드 만들기</button>
-            <div id="shareCodeWrap" style="display:none;margin-bottom:12px">
-              <div class="subtle" style="margin-bottom:6px">아래 코드를 상대방에게 전달하세요</div>
-              <div style="display:flex;gap:6px;align-items:center">
+            <button class="btn btn-primary" style="width:100%;margin-bottom:8px" id="shareCreateBtn">내 듀티 링크 만들기</button>
+
+            <div id="shareCodeWrap" style="display:none;margin-bottom:4px">
+              <div class="subtle" style="margin-bottom:6px">공유 코드</div>
+              <div style="display:flex;gap:6px;align-items:center;margin-bottom:10px">
                 <div class="share-code-display" id="shareCodeText"></div>
-                <button class="btn btn-secondary" id="shareCopyBtn">복사</button>
+                <button class="btn btn-secondary" id="shareCopyCodeBtn" style="white-space:nowrap">코드 복사</button>
+              </div>
+              <button class="btn btn-primary" style="width:100%;font-size:15px;padding:14px" id="shareNativeBtn">
+                공유하기 (카카오톡 · 문자 · 기타)
+              </button>
+              <button class="btn btn-secondary" style="width:100%;margin-top:6px" id="shareCopyLinkBtn">링크만 복사</button>
+            </div>
+
+            <div style="margin-top:12px;padding-top:12px;border-top:1px solid var(--line)">
+              <div class="subtle" style="margin-bottom:6px">상대방 코드 직접 입력</div>
+              <div style="display:flex;gap:6px">
+                <input id="shareJoinInput" class="field" placeholder="ABC123" maxlength="6"
+                  style="text-transform:uppercase;letter-spacing:.1em;font-weight:700;flex:1" />
+                <button class="btn btn-secondary" id="shareJoinBtn">가져오기</button>
               </div>
             </div>
-
-            <div class="subtle" style="margin-bottom:6px">상대방 코드 입력</div>
-            <div style="display:flex;gap:6px;margin-bottom:8px">
-              <input id="shareJoinInput" class="field" placeholder="ABC123" maxlength="6"
-                style="text-transform:uppercase;letter-spacing:.1em;font-weight:700;flex:1" />
-              <button class="btn btn-primary" id="shareJoinBtn">가져오기</button>
-            </div>
-            <div id="shareStatus" class="subtle ocr-hint"></div>
+            <div id="shareStatus" class="subtle ocr-hint" style="margin-top:8px"></div>
           </section>
 
         </aside>
@@ -862,7 +869,9 @@
         shareCreateBtn: document.getElementById("shareCreateBtn"),
         shareCodeWrap: document.getElementById("shareCodeWrap"),
         shareCodeText: document.getElementById("shareCodeText"),
-        shareCopyBtn: document.getElementById("shareCopyBtn"),
+        shareCopyCodeBtn: document.getElementById("shareCopyCodeBtn"),
+        shareNativeBtn: document.getElementById("shareNativeBtn"),
+        shareCopyLinkBtn: document.getElementById("shareCopyLinkBtn"),
         shareJoinInput: document.getElementById("shareJoinInput"),
         shareJoinBtn: document.getElementById("shareJoinBtn"),
         shareStatus: document.getElementById("shareStatus"),
@@ -950,19 +959,58 @@
       dom.ocrImportBtn.addEventListener("click", importFromOcr);
 
       dom.shareCreateBtn.addEventListener("click", createShareCode);
-      dom.shareCopyBtn.addEventListener("click", () => {
-        const code = dom.shareCodeText.textContent;
-        if (!code) return;
-        navigator.clipboard.writeText(code).then(() => {
-          setToast("코드를 복사했어요!");
-        }).catch(() => {
-          setToast("코드: " + code);
-        });
+      dom.shareCopyCodeBtn.addEventListener("click", () => {
+        copyToClipboard(dom.shareCodeText.textContent, "코드를 복사했어요!");
+      });
+      dom.shareNativeBtn.addEventListener("click", shareNative);
+      dom.shareCopyLinkBtn.addEventListener("click", () => {
+        copyToClipboard(shareUrl(dom.shareCodeText.textContent), "링크를 복사했어요!");
       });
       dom.shareJoinBtn.addEventListener("click", joinWithCode);
       dom.shareJoinInput.addEventListener("keydown", (e) => {
         if (e.key === "Enter") joinWithCode();
       });
+
+      // 링크로 들어온 경우 자동 join
+      (function checkJoinParam() {
+        const code = new URLSearchParams(window.location.search).get("join");
+        if (!code) return;
+        history.replaceState(null, "", window.location.pathname);
+        dom.shareJoinInput.value = code.toUpperCase();
+        joinWithCode();
+      })();
+
+      function shareUrl(code) {
+        return `${window.location.origin}${window.location.pathname}?join=${code}`;
+      }
+
+      function copyToClipboard(text, successMsg) {
+        navigator.clipboard.writeText(text).then(() => {
+          setToast(successMsg);
+        }).catch(() => {
+          setToast(text);
+        });
+      }
+
+      async function shareNative() {
+        const code = dom.shareCodeText.textContent;
+        if (!code) return;
+        const url = shareUrl(code);
+        const shareData = {
+          title: "듀티 달력 공유",
+          text: `${dom.shareCodeText.closest(".card") ? activeMember()?.name ?? "" : ""}의 듀티를 같이 확인해요!`,
+          url,
+        };
+        if (navigator.share && navigator.canShare?.(shareData)) {
+          try {
+            await navigator.share(shareData);
+          } catch (err) {
+            if (err.name !== "AbortError") copyToClipboard(url, "링크를 복사했어요!");
+          }
+        } else {
+          copyToClipboard(url, "링크를 복사했어요! (이 브라우저는 공유 시트 미지원)");
+        }
+      }
 
       async function createShareCode() {
         const member = activeMember();
@@ -971,7 +1019,7 @@
         if (Object.keys(shifts).length === 0) { setToast("듀티를 먼저 입력해 주세요."); return; }
 
         dom.shareCreateBtn.disabled = true;
-        dom.shareStatus.textContent = "코드 생성 중...";
+        dom.shareStatus.textContent = "링크 생성 중...";
         dom.shareCodeWrap.style.display = "none";
 
         try {
@@ -984,8 +1032,8 @@
           if (!res.ok) { dom.shareStatus.textContent = data.error ?? "오류가 발생했어요."; return; }
           dom.shareCodeText.textContent = data.code;
           dom.shareCodeWrap.style.display = "";
-          dom.shareStatus.textContent = "코드를 상대방에게 전달하세요!";
-          setToast("코드 생성 완료!");
+          dom.shareStatus.textContent = "아래 버튼으로 카카오톡·문자로 바로 공유하세요!";
+          setToast("링크 생성 완료!");
         } catch {
           dom.shareStatus.textContent = "네트워크 오류가 발생했어요.";
         } finally {
