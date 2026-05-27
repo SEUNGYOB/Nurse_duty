@@ -6,6 +6,10 @@
 - 로컬 서버는 [server.py](/Users/seungyobyi/Documents/Nurse%20Shift%20Board%20Prototype/server.py) 가 담당한다.
 - OCR 파서는 [ocr/duty_parser.py](/Users/seungyobyi/Documents/Nurse%20Shift%20Board%20Prototype/ocr/duty_parser.py) 로 분리되어 있다.
 - 디버그 산출물은 `scratch/ocr-debug/` 로 분리했다.
+- 현재 기본 OCR 경로는 Claude Vision (`use_row_guides=True`) 이다.
+- 파란 보조선 방식으로 **100% 정확도 (480/480)** 달성 (2026-05-27 확정).
+- 세로 해석과 가로/세로 교차검증은 실패로 확정, 중단했다.
+- 시도/실패/채택 기록은 [claude_ocr_findings.md](claude_ocr_findings.md) 에 정리했다.
 
 ## 동작 범위
 
@@ -16,6 +20,5 @@
 ## 남은 과제
 
 - 표 외곽 자동 검출
-- 셀 OCR 정확도 개선
 - 팀원 이름 자동 매칭 안정화
-- 다른 달/다른 사진 각도 테스트
+- 다른 달/다른 병원 양식 테스트

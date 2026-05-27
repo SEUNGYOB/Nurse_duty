@@ -96,6 +96,21 @@ def parse_duty():
     if mode not in {"claude", "google", "tesseract"}:
         mode = "claude"
 
+    refine_row_indices = None
+    raw_refine_rows = request.form.get("claudeRefineRows")
+    if raw_refine_rows:
+        parsed = []
+        for token in raw_refine_rows.split(","):
+            token = token.strip()
+            if not token:
+                continue
+            try:
+                parsed.append(max(1, min(16, int(token))))
+            except (TypeError, ValueError):
+                continue
+        if parsed:
+            refine_row_indices = sorted(set(parsed))
+
     try:
         if mode == "google":
             result = parse_duty_image_with_google(payload, upload.filename, row_index=row_index)
@@ -104,6 +119,7 @@ def parse_duty():
                 payload, upload.filename,
                 row_index=row_index,
                 year=year, month=month,
+                refine_row_indices=refine_row_indices,
             )
         else:
             result = parse_duty_image_bytes(payload, upload.filename, row_index=row_index)

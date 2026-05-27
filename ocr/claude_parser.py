@@ -420,7 +420,7 @@ def request_row_refinement(
     response_json = send_claude_request(payload, ssl_context)
     payload_json = extract_json_payload(extract_text_blocks(response_json))
     normalized = normalize_rows({"rows": [payload_json]}, row_index=row_box["rowIndex"])
-    return normalized[0] if normalized else None
+    return (normalized[0] if normalized else None), response_json
 
 
 def parse_duty_image_with_claude(
@@ -432,6 +432,7 @@ def parse_duty_image_with_claude(
     year: int | None = None,
     month: int | None = None,
     refine_row_indices: list[int] | None = None,
+    use_row_guides: bool = True,
 ) -> dict:
     api_key = os.environ.get("ANTHROPIC_API_KEY")
     if not api_key:
@@ -454,41 +455,31 @@ def parse_duty_image_with_claude(
         rows_for_overlay = build_schedule_boxes(DEFAULT_TEMPLATE)
 
     table_crop = crop_table_for_claude(image, table_box)
-    annotated = annotate_row_boundaries(rectified, y_bounds, DEFAULT_TEMPLATE)
-
     ssl_context = build_ssl_context()
+
+    content: list[dict] = [{"type": "text", "text": build_prompt(year, month, with_row_guides=use_row_guides)}]
+    content.append({
+        "type": "image",
+        "source": {"type": "base64", "media_type": "image/jpeg", "data": pil_to_base64(table_crop, "JPEG")},
+    })
+    if use_row_guides:
+        annotated = annotate_row_boundaries(rectified, y_bounds, DEFAULT_TEMPLATE)
+        content.append({
+            "type": "image",
+            "source": {"type": "base64", "media_type": "image/jpeg", "data": pil_to_base64(annotated, "JPEG")},
+        })
 
     payload = {
         "model": DEFAULT_ANTHROPIC_MODEL,
         "max_tokens": 4096,
         "temperature": 0,
-        "messages": [
-            {
-                "role": "user",
-                "content": [
-                    {"type": "text", "text": build_prompt(year, month, with_row_guides=True)},
-                    {
-                        "type": "image",
-                        "source": {
-                            "type": "base64",
-                            "media_type": "image/jpeg",
-                            "data": pil_to_base64(table_crop, "JPEG"),
-                        },
-                    },
-                    {
-                        "type": "image",
-                        "source": {
-                            "type": "base64",
-                            "media_type": "image/jpeg",
-                            "data": pil_to_base64(annotated, "JPEG"),
-                        },
-                    },
-                ],
-            }
-        ],
+        "messages": [{"role": "user", "content": content}],
     }
 
     response_json = send_claude_request(payload, ssl_context)
+    usage = response_json.get("usage", {})
+    total_input_tokens  = int(usage.get("input_tokens", 0))
+    total_output_tokens = int(usage.get("output_tokens", 0))
     response_text = extract_text_blocks(response_json)
     parsed_payload = extract_json_payload(response_text)
 
@@ -516,7 +507,7 @@ def parse_duty_image_with_claude(
             row_box = overlay_by_index.get(target_index)
             if not row_box:
                 continue
-            refined = request_row_refinement(
+            refined, refine_response = request_row_refinement(
                 rectified,
                 row_box,
                 year=year,
@@ -527,6 +518,9 @@ def parse_duty_image_with_claude(
             )
             if refined is None:
                 continue
+            refine_usage = refine_response.get("usage", {}) if refine_response else {}
+            total_input_tokens  += int(refine_usage.get("input_tokens", 0))
+            total_output_tokens += int(refine_usage.get("output_tokens", 0))
             by_index[target_index] = refined
             refine_debug.append(
                 {
@@ -554,6 +548,8 @@ def parse_duty_image_with_claude(
             "sourceFormat": source_format,
             "rotationApplied": rotation_applied,
             "refinedRows": refine_debug,
+            "inputTokens": total_input_tokens,
+            "outputTokens": total_output_tokens,
         },
     }
     if include_debug:

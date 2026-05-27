@@ -112,6 +112,12 @@ def pil_to_array(image: Image.Image) -> np.ndarray:
     return np.asarray(image.convert("L"), dtype=np.uint8)
 
 
+def load_image_rgb(image_bytes: bytes) -> Image.Image:
+    image = Image.open(io.BytesIO(image_bytes))
+    image = ImageOps.exif_transpose(image)
+    return image.convert("RGB")
+
+
 def fallback_table_box(image: Image.Image) -> tuple[int, int, int, int]:
     width, height = image.size
     return (
@@ -214,6 +220,74 @@ def detect_table_box(image: Image.Image) -> tuple[int, int, int, int]:
         return fallback_table_box(image)
 
     return left, top, right, bottom
+
+
+def score_table_orientation(image: Image.Image) -> tuple[float, tuple[int, int, int, int]]:
+    table_box = detect_table_box(image)
+    left, top, right, bottom = table_box
+    width = max(1, right - left)
+    height = max(1, bottom - top)
+
+    coverage = (width * height) / max(1, image.width * image.height)
+    aspect_bonus = min(3.0, width / height)
+    landscape_bonus = 0.4 if width >= height else 0.0
+    centered_x = 1.0 - min(1.0, abs(((left + right) / 2) - (image.width / 2)) / max(1.0, image.width / 2))
+    centered_y = 1.0 - min(1.0, abs(((top + bottom) / 2) - (image.height / 2)) / max(1.0, image.height / 2))
+    center_bonus = 0.5 * (centered_x + centered_y)
+    score = (coverage * 3.0) + aspect_bonus + landscape_bonus + center_bonus
+    return score, table_box
+
+
+def score_left_label_layout(image: Image.Image, table_box: tuple[int, int, int, int]) -> float:
+    rectified = rectify_table(image, table_box, TABLE_OUTPUT_SIZE)
+    gray = pil_to_array(rectified)
+    dark = gray < 190
+    vertical = ndimage.binary_opening(
+        dark,
+        structure=np.ones((max(48, rectified.height // 22), 1), dtype=bool),
+    )
+
+    edge_width = max(
+        1,
+        int(
+            round(
+                rectified.width
+                * max(DEFAULT_TEMPLATE.schedule_box[0], 1.0 - DEFAULT_TEMPLATE.schedule_box[2])
+            )
+        ),
+    )
+    left_band = vertical[:, :edge_width]
+    right_band = vertical[:, rectified.width - edge_width :]
+    left_density = float(left_band.mean()) if left_band.size else 0.0
+    right_density = float(right_band.mean()) if right_band.size else 0.0
+
+    # 정방향에서는 왼쪽 라벨 열보다 오른쪽 듀티 그리드의 세로선 밀도가 높다.
+    return right_density - left_density
+
+
+def auto_orient_duty_image(image: Image.Image) -> tuple[Image.Image, int]:
+    best_image = image
+    best_rotation = 0
+    best_score, _ = score_table_orientation(image)
+
+    for rotation in (90, 270):
+        rotated = image.rotate(rotation, expand=True)
+        score, _ = score_table_orientation(rotated)
+        if score > best_score + 0.05:
+            best_image = rotated
+            best_rotation = rotation
+            best_score = score
+
+    best_table_box = detect_table_box(best_image)
+    upright_layout = score_left_label_layout(best_image, best_table_box)
+    flipped_image = best_image.rotate(180, expand=True)
+    flipped_table_box = detect_table_box(flipped_image)
+    flipped_layout = score_left_label_layout(flipped_image, flipped_table_box)
+    if flipped_layout > upright_layout + 0.01:
+        best_image = flipped_image
+        best_rotation = (best_rotation + 180) % 360
+
+    return best_image, best_rotation
 
 
 def rectify_table(image: Image.Image, table_box: tuple[int, int, int, int], output_size: tuple[int, int]) -> Image.Image:
@@ -866,7 +940,8 @@ def parse_duty_image_bytes(
     row_index: int | None = None,
     include_debug: bool = False,
 ) -> dict:
-    image = Image.open(io.BytesIO(image_bytes)).convert("RGB")
+    image = load_image_rgb(image_bytes)
+    image, rotation_applied = auto_orient_duty_image(image)
     year, month = guess_month_and_year(filename)
 
     table_box = detect_table_box(image)
@@ -938,6 +1013,7 @@ def parse_duty_image_bytes(
             "columnCount": DEFAULT_TEMPLATE.column_count,
             "detectedTableBox": list(table_box),
             "detectedScheduleBox": [get_schedule_geometry(DEFAULT_TEMPLATE)[key] for key in ("left", "top", "right", "bottom")],
+            "rotationApplied": rotation_applied,
         },
     }
     if include_debug:
