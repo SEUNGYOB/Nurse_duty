@@ -1,7 +1,10 @@
 .DS_Store
 .vercel/
-__pycache__/
-ocr/__pycache__/
+**/__pycache__/
+*.pyc
+.venv/
 scratch/
 credentials/
 .env
+memory/
+samples/

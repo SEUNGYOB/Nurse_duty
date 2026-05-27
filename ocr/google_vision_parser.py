@@ -7,11 +7,13 @@ from PIL import Image
 
 from .duty_parser import (
     DEFAULT_TEMPLATE,
+    auto_orient_duty_image,
     build_schedule_boxes_from_bounds,
     detect_schedule_line_bounds,
     detect_table_box,
     guess_month_and_year,
     make_debug_overlay,
+    load_image_rgb,
     normalize_shift,
     ocr_shift_cell,
     rectify_table,
@@ -133,7 +135,8 @@ def parse_duty_image_with_google(
 ) -> dict:
     import io
 
-    image = Image.open(io.BytesIO(image_bytes)).convert("RGB")
+    image = load_image_rgb(image_bytes)
+    image, rotation_applied = auto_orient_duty_image(image)
     year, month = guess_month_and_year(filename)
 
     table_box = detect_table_box(image)
@@ -201,6 +204,7 @@ def parse_duty_image_with_google(
             "columnCount": DEFAULT_TEMPLATE.column_count,
             "detectedTableBox": list(table_box),
             "parser": "google",
+            "rotationApplied": rotation_applied,
         },
     }
     if include_debug:
