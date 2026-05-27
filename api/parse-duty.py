@@ -21,6 +21,7 @@ def _too_large(_e):
 
 
 @app.route("/api/parse-duty", methods=["POST"])
+@app.route("/", methods=["POST"])
 def parse_duty():
     # Lazy imports so the module loads fast on cold start.
     from ocr.claude_parser import parse_duty_image_with_claude
