@@ -716,26 +716,9 @@
 
             <button class="btn btn-secondary" style="width:100%;margin-bottom:8px" id="ocrRecognizeBtn" disabled>인식하기</button>
 
-            <div style="margin-bottom: 10px" id="ocrRowWrap">
+            <div style="margin-bottom: 10px;display:none" id="ocrRowWrap">
               <div class="subtle" style="margin-bottom: 6px">내 이름 선택</div>
-              <select id="ocrRowSelect" class="field" style="cursor:pointer">
-                <option value="1">1번</option>
-                <option value="2">2번</option>
-                <option value="3">3번</option>
-                <option value="4">4번</option>
-                <option value="5">5번</option>
-                <option value="6">6번</option>
-                <option value="7">7번</option>
-                <option value="8">8번</option>
-                <option value="9">9번</option>
-                <option value="10">10번</option>
-                <option value="11">11번</option>
-                <option value="12">12번</option>
-                <option value="13">13번</option>
-                <option value="14">14번</option>
-                <option value="15">15번</option>
-                <option value="16">16번</option>
-              </select>
+              <select id="ocrRowSelect" class="field" style="cursor:pointer"></select>
             </div>
 
             <button class="btn btn-primary" style="width:100%;margin-bottom:8px" id="ocrImportBtn" disabled>가져오기</button>
@@ -965,7 +948,8 @@
         dom.ocrImportBtn.disabled = true;
         dom.ocrStatus.textContent = "";
         _ocrAllRows = null;
-        resetRowDropdown();
+        dom.ocrRowWrap.style.display = "none";
+        dom.ocrRowSelect.innerHTML = "";
       });
 
       dom.ocrRecognizeBtn.addEventListener("click", recognizeOcr);
@@ -1112,15 +1096,6 @@
 
       let _ocrAllRows = null;
 
-      function resetRowDropdown() {
-        const sel = dom.ocrRowSelect;
-        sel.innerHTML = Array.from({ length: 16 }, (_, i) =>
-          `<option value="${i + 1}">${i + 1}번</option>`
-        ).join("");
-        const saved = loadOcrPrefs().row ?? "1";
-        sel.value = saved;
-      }
-
       async function _streamOcr(formData) {
         const res = await fetch("/api/parse-duty", { method: "POST", body: formData });
         if (!res.ok || !res.body) {
@@ -1182,8 +1157,9 @@
           sel.innerHTML = rows.map(row =>
             `<option value="${row.rowIndex}">${row.rowIndex}번${row.name ? " · " + row.name : ""}</option>`
           ).join("");
-          const savedRow = loadOcrPrefs().row ?? "1";
+          const savedRow = loadOcrPrefs().row ?? String(rows[0]?.rowIndex ?? "");
           if ([...sel.options].some(o => o.value === savedRow)) sel.value = savedRow;
+          dom.ocrRowWrap.style.display = "";
 
           dom.ocrImportBtn.disabled = false;
           dom.ocrStatus.textContent = `${result.year}년 ${result.month}월 · ${rows.length}명 인식 완료. 이름을 선택 후 가져오기를 누르세요.`;
@@ -1227,7 +1203,8 @@
         dom.ocrRecognizeBtn.disabled = true;
         dom.ocrImportBtn.disabled = true;
         _ocrAllRows = null;
-        resetRowDropdown();
+        dom.ocrRowWrap.style.display = "none";
+        dom.ocrRowSelect.innerHTML = "";
       }
 
       function renderAll() {
