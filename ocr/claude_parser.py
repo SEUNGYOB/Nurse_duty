@@ -367,6 +367,23 @@ def annotate_row_boundaries(
     return annotated
 
 
+def mask_identifying_info(
+    rectified: Image.Image,
+    template: DutySheetTemplate = DEFAULT_TEMPLATE,
+) -> Image.Image:
+    """이름 컬럼·제목·여백을 검은 박스로 가려 익명 처리한 이미지를 반환한다."""
+    masked = rectified.convert("RGB").copy()
+    draw = ImageDraw.Draw(masked)
+    w, h = masked.size
+    g = get_schedule_geometry(template)
+    fill = (20, 20, 20)
+    draw.rectangle([0,              0, int(g["left"]) - 1, h          ], fill=fill)  # 이름 컬럼
+    draw.rectangle([0,              0, w,                  int(g["top"]) - 1], fill=fill)  # 제목
+    draw.rectangle([int(g["right"]) + 1, 0, w,             h          ], fill=fill)  # 우측 여백
+    draw.rectangle([0, int(g["bottom"]) + 1, w,             h         ], fill=fill)  # 하단 여백
+    return masked
+
+
 def send_claude_request(payload: dict, ssl_context: ssl.SSLContext) -> dict:
     request = urllib.request.Request(
         ANTHROPIC_API_URL,
@@ -440,6 +457,7 @@ def parse_duty_image_with_claude(
     use_row_guides: bool = True,
     guide_image_width: int = 1200,
     on_progress: "Callable[[str], None] | None" = None,
+    on_training_data: "Callable[[Image.Image, dict], None] | None" = None,
 ) -> dict:
     def _progress(msg: str) -> None:
         if on_progress:
@@ -570,4 +588,10 @@ def parse_duty_image_with_claude(
     }
     if include_debug:
         result["debugImage"] = make_debug_overlay(image, rectified, table_box, rows_for_overlay, rows)
+    if on_training_data:
+        try:
+            masked = mask_identifying_info(rectified, DEFAULT_TEMPLATE)
+            on_training_data(masked, result)
+        except Exception:
+            pass  # 학습 데이터 저장 실패는 OCR 결과에 영향 없음
     return result

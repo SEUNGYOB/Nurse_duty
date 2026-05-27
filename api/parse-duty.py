@@ -31,6 +31,7 @@ def _too_large(_e):
 def parse_duty():
     from ocr.claude_parser import parse_duty_image_with_claude
     from ocr.duty_parser import parse_duty_image_bytes
+    from ocr.training_store import save_sample as save_training_sample
 
     if "file" not in request.files:
         return jsonify({"error": "사진 파일을 찾지 못했어요."}), 400
@@ -82,6 +83,7 @@ def parse_duty():
                         row_index=row_index,
                         year=year, month=month,
                         on_progress=on_progress,
+                        on_training_data=save_training_sample,
                     )
                 else:
                     result = parse_duty_image_bytes(payload, filename, row_index=row_index)

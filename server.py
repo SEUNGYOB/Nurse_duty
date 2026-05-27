@@ -13,6 +13,7 @@ from flask_cors import CORS
 from werkzeug.exceptions import RequestEntityTooLarge
 
 from ocr import parse_duty_image_bytes, parse_duty_image_with_claude, parse_duty_image_with_google
+from ocr.training_store import save_sample as save_training_sample
 
 load_dotenv()
 
@@ -132,6 +133,7 @@ def parse_duty():
                         year=year, month=month,
                         refine_row_indices=refine_row_indices,
                         on_progress=on_progress,
+                        on_training_data=save_training_sample,
                     )
                 else:
                     result = parse_duty_image_bytes(payload, filename, row_index=row_index)
