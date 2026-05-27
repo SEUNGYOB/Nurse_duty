@@ -730,6 +730,10 @@
             <div class="section-title">공유</div>
             <div class="empty" style="margin-bottom: 12px">내 듀티 링크를 만들어 카카오톡·문자로 보내세요. 상대방이 링크를 열면 자동으로 함께 볼 수 있어요.</div>
 
+            <div style="margin-bottom:10px">
+              <div class="subtle" style="margin-bottom:6px">공유할 팀원</div>
+              <select id="shareMemberSelect" class="field" style="cursor:pointer"></select>
+            </div>
             <button class="btn btn-primary" style="width:100%;margin-bottom:8px" id="shareCreateBtn">내 듀티 링크 만들기</button>
 
             <div id="shareCodeWrap" style="display:none;margin-bottom:4px">
@@ -854,6 +858,7 @@
         ocrImportBtn: document.getElementById("ocrImportBtn"),
         ocrFileName: document.getElementById("ocrFileName"),
         ocrStatus: document.getElementById("ocrStatus"),
+        shareMemberSelect: document.getElementById("shareMemberSelect"),
         shareCreateBtn: document.getElementById("shareCreateBtn"),
         shareCodeWrap: document.getElementById("shareCodeWrap"),
         shareCodeText: document.getElementById("shareCodeText"),
@@ -1010,7 +1015,8 @@
       }
 
       async function createShareCode() {
-        const member = activeMember();
+        const selectedId = dom.shareMemberSelect.value;
+        const member = state.members.find(m => m.id === selectedId) ?? activeMember();
         if (!member) { setToast("팀원을 먼저 추가해 주세요."); return; }
         const shifts = getBucket(member.id);
         if (Object.keys(shifts).length === 0) { setToast("듀티를 먼저 입력해 주세요."); return; }
@@ -1243,6 +1249,13 @@
           `;
         });
         dom.teamList.innerHTML = html.join("") || '<div class="empty">아직 팀원이 없어요.</div>';
+
+        // 공유 팀원 드롭다운 동기화
+        const prev = dom.shareMemberSelect.value;
+        dom.shareMemberSelect.innerHTML = state.members.map(m =>
+          `<option value="${m.id}">${escapeHtml(m.name)}</option>`
+        ).join("") || '<option value="">팀원 없음</option>';
+        if (state.members.some(m => m.id === prev)) dom.shareMemberSelect.value = prev;
 
         dom.teamList.querySelectorAll("[data-member-id]").forEach((button) => {
           button.addEventListener("click", () => {
