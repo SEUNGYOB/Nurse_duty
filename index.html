@@ -1026,7 +1026,7 @@
           const res = await fetch("/api/share", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ member_name: member.name, shifts }),
+            body: JSON.stringify({ row_index: state.members.indexOf(member) + 1, shifts }),
           });
           const data = await res.json();
           if (!res.ok) { dom.shareStatus.textContent = data.error ?? "오류가 발생했어요."; return; }
@@ -1053,27 +1053,22 @@
           const data = await res.json();
           if (!res.ok) { dom.shareStatus.textContent = data.error ?? "오류가 발생했어요."; return; }
 
-          const partnerName = data.member_name;
           const partnerShifts = data.shifts;
 
-          // 현재 활성 멤버가 아닌 쪽 슬롯을 파트너로 사용
+          // 이름 없이 슬롯에 듀티만 적용 (이름은 로컬에서 관리)
           let partner = state.members.find((m) => m.id !== state.activeMemberId);
           if (!partner && state.members.length < MAX_MEMBERS) {
-            partner = { id: crypto.randomUUID(), name: partnerName };
+            partner = { id: crypto.randomUUID(), name: "상대방" };
             state.members.push(partner);
-          } else if (partner) {
-            partner.name = partnerName;
-          } else {
-            // 두 슬롯 모두 찬 경우 두 번째 멤버 덮어쓰기
-            partner = state.members[1];
-            partner.name = partnerName;
           }
-          state.shiftsByMember[partner.id] = partnerShifts;
+          if (partner) {
+            state.shiftsByMember[partner.id] = partnerShifts;
+          }
 
           dom.shareJoinInput.value = "";
-          dom.shareStatus.textContent = `${partnerName}의 듀티를 가져왔어요!`;
+          dom.shareStatus.textContent = "상대방의 듀티를 가져왔어요!";
           renderAll();
-          setToast(`${partnerName}의 듀티를 불러왔어요.`);
+          setToast("상대방의 듀티를 불러왔어요.");
         } catch {
           dom.shareStatus.textContent = "네트워크 오류가 발생했어요.";
         } finally {
@@ -1125,20 +1120,51 @@
 
         try {
           const res = await fetch("/api/parse-duty", { method: "POST", body: formData });
-          const data = await res.json();
-
-          if (!res.ok) {
+          if (!res.ok || !res.body) {
+            const data = await res.json().catch(() => ({}));
             dom.ocrStatus.textContent = `오류: ${data.error ?? res.status}`;
             return;
           }
 
-          const row = data.rows?.[0];
-          if (!row) {
-            dom.ocrStatus.textContent = "결과를 읽지 못했어요.";
+          // SSE 스트림 읽기
+          const reader = res.body.getReader();
+          const decoder = new TextDecoder();
+          let buffer = "";
+          let result = null;
+          let hadError = false;
+
+          outer: while (true) {
+            const { done, value } = await reader.read();
+            if (done) break;
+            buffer += decoder.decode(value, { stream: true });
+            const lines = buffer.split("\n");
+            buffer = lines.pop() ?? "";
+            for (const line of lines) {
+              if (!line.startsWith("data: ")) continue;
+              let event;
+              try { event = JSON.parse(line.slice(6)); } catch { continue; }
+              if (event.type === "progress") {
+                dom.ocrStatus.textContent = event.message;
+              } else if (event.type === "result") {
+                result = event.data;
+                break outer;
+              } else if (event.type === "error") {
+                dom.ocrStatus.textContent = `오류: ${event.message}`;
+                hadError = true;
+                break outer;
+              }
+            }
+          }
+
+          if (hadError || !result) {
+            if (!hadError) dom.ocrStatus.textContent = "결과를 읽지 못했어요.";
             return;
           }
 
-          const { year, month } = data;
+          const row = result.rows?.[0];
+          if (!row) { dom.ocrStatus.textContent = "결과를 읽지 못했어요."; return; }
+
+          const { year, month } = result;
           const daysInMonth = new Date(year, month, 0).getDate();
           let applied = 0;
           row.shifts.forEach((shift, index) => {

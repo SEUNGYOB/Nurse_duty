@@ -1,11 +1,14 @@
 #!/usr/bin/env python3
 from __future__ import annotations
 
+import json
 import os
+import queue
+import threading
 from pathlib import Path
 
 from dotenv import load_dotenv
-from flask import Flask, jsonify, request, send_file
+from flask import Flask, Response, jsonify, request, send_file, stream_with_context
 from flask_cors import CORS
 from werkzeug.exceptions import RequestEntityTooLarge
 
@@ -38,6 +41,10 @@ def _check_token() -> tuple | None:
     return None
 
 
+def _sse(type_: str, **kwargs) -> str:
+    return f"data: {json.dumps({'type': type_, **kwargs}, ensure_ascii=False)}\n\n"
+
+
 @app.errorhandler(RequestEntityTooLarge)
 def _too_large(_e: RequestEntityTooLarge):
     return jsonify({"error": f"파일 크기가 {MAX_UPLOAD_MB}MB를 초과했습니다."}), 413
@@ -68,6 +75,7 @@ def parse_duty():
         return jsonify({"error": "사진 파일을 찾지 못했어요."}), 400
 
     payload = upload.read()
+    filename = upload.filename
 
     row_index = None
     raw_row = request.form.get("rowIndex")
@@ -77,8 +85,7 @@ def parse_duty():
         except (TypeError, ValueError):
             pass
 
-    year = None
-    month = None
+    year = month = None
     try:
         raw_year = request.form.get("year")
         if raw_year:
@@ -97,37 +104,60 @@ def parse_duty():
         mode = "claude"
 
     refine_row_indices = None
-    raw_refine_rows = request.form.get("claudeRefineRows")
-    if raw_refine_rows:
+    raw_refine = request.form.get("claudeRefineRows")
+    if raw_refine:
         parsed = []
-        for token in raw_refine_rows.split(","):
-            token = token.strip()
-            if not token:
-                continue
+        for token in raw_refine.split(","):
             try:
-                parsed.append(max(1, min(16, int(token))))
+                parsed.append(max(1, min(16, int(token.strip()))))
             except (TypeError, ValueError):
-                continue
+                pass
         if parsed:
             refine_row_indices = sorted(set(parsed))
 
-    try:
-        if mode == "google":
-            result = parse_duty_image_with_google(payload, upload.filename, row_index=row_index)
-        elif mode == "claude":
-            result = parse_duty_image_with_claude(
-                payload, upload.filename,
-                row_index=row_index,
-                year=year, month=month,
-                refine_row_indices=refine_row_indices,
-            )
-        else:
-            result = parse_duty_image_bytes(payload, upload.filename, row_index=row_index)
-    except RuntimeError as error:
-        return jsonify({"error": str(error), "mode": mode}), 502
+    def generate():
+        q: queue.Queue = queue.Queue()
 
-    result["mode"] = mode
-    return jsonify(result)
+        def on_progress(msg: str) -> None:
+            q.put(("progress", msg))
+
+        def run() -> None:
+            try:
+                if mode == "google":
+                    result = parse_duty_image_with_google(payload, filename, row_index=row_index)
+                elif mode == "claude":
+                    result = parse_duty_image_with_claude(
+                        payload, filename,
+                        row_index=row_index,
+                        year=year, month=month,
+                        refine_row_indices=refine_row_indices,
+                        on_progress=on_progress,
+                    )
+                else:
+                    result = parse_duty_image_bytes(payload, filename, row_index=row_index)
+                result["mode"] = mode
+                q.put(("result", result))
+            except Exception as exc:
+                q.put(("error", str(exc)))
+
+        threading.Thread(target=run, daemon=True).start()
+
+        while True:
+            type_, data = q.get()
+            if type_ == "progress":
+                yield _sse("progress", message=data)
+            elif type_ == "result":
+                yield _sse("result", data=data)
+                break
+            else:
+                yield _sse("error", message=data)
+                break
+
+    return Response(
+        stream_with_context(generate()),
+        mimetype="text/event-stream",
+        headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"},
+    )
 
 
 if __name__ == "__main__":

@@ -1,18 +1,24 @@
+import json
+import queue
 import sys
+import threading
 from pathlib import Path
 
-# Make the project root importable so `ocr/` package is found.
 ROOT = Path(__file__).resolve().parent.parent
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
-from flask import Flask, jsonify, request
+from flask import Flask, Response, jsonify, request, stream_with_context
 from werkzeug.exceptions import RequestEntityTooLarge
 
 MAX_UPLOAD_MB = 10
 
 app = Flask(__name__)
 app.config["MAX_CONTENT_LENGTH"] = MAX_UPLOAD_MB * 1024 * 1024
+
+
+def _sse(type_: str, **kwargs) -> str:
+    return f"data: {json.dumps({'type': type_, **kwargs}, ensure_ascii=False)}\n\n"
 
 
 @app.errorhandler(RequestEntityTooLarge)
@@ -23,7 +29,6 @@ def _too_large(_e):
 @app.route("/api/parse-duty", methods=["POST"])
 @app.route("/", methods=["POST"])
 def parse_duty():
-    # Lazy imports so the module loads fast on cold start.
     from ocr.claude_parser import parse_duty_image_with_claude
     from ocr.duty_parser import parse_duty_image_bytes
 
@@ -35,6 +40,7 @@ def parse_duty():
         return jsonify({"error": "사진 파일을 찾지 못했어요."}), 400
 
     payload = upload.read()
+    filename = upload.filename
 
     row_index = None
     raw_row = request.form.get("rowIndex")
@@ -44,8 +50,7 @@ def parse_duty():
         except (TypeError, ValueError):
             pass
 
-    year = None
-    month = None
+    year = month = None
     try:
         raw_year = request.form.get("year")
         if raw_year:
@@ -63,17 +68,43 @@ def parse_duty():
     if mode not in {"claude", "tesseract"}:
         mode = "claude"
 
-    try:
-        if mode == "claude":
-            result = parse_duty_image_with_claude(
-                payload, upload.filename,
-                row_index=row_index,
-                year=year, month=month,
-            )
-        else:
-            result = parse_duty_image_bytes(payload, upload.filename, row_index=row_index)
-    except RuntimeError as error:
-        return jsonify({"error": str(error), "mode": mode}), 502
+    def generate():
+        q: queue.Queue = queue.Queue()
 
-    result["mode"] = mode
-    return jsonify(result)
+        def on_progress(msg: str) -> None:
+            q.put(("progress", msg))
+
+        def run() -> None:
+            try:
+                if mode == "claude":
+                    result = parse_duty_image_with_claude(
+                        payload, filename,
+                        row_index=row_index,
+                        year=year, month=month,
+                        on_progress=on_progress,
+                    )
+                else:
+                    result = parse_duty_image_bytes(payload, filename, row_index=row_index)
+                result["mode"] = mode
+                q.put(("result", result))
+            except Exception as exc:
+                q.put(("error", str(exc)))
+
+        threading.Thread(target=run, daemon=True).start()
+
+        while True:
+            type_, data = q.get()
+            if type_ == "progress":
+                yield _sse("progress", message=data)
+            elif type_ == "result":
+                yield _sse("result", data=data)
+                break
+            else:
+                yield _sse("error", message=data)
+                break
+
+    return Response(
+        stream_with_context(generate()),
+        mimetype="text/event-stream",
+        headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"},
+    )

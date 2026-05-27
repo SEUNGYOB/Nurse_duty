@@ -433,13 +433,20 @@ def parse_duty_image_with_claude(
     month: int | None = None,
     refine_row_indices: list[int] | None = None,
     use_row_guides: bool = True,
+    guide_image_width: int = 1200,
+    on_progress: "Callable[[str], None] | None" = None,
 ) -> dict:
+    def _progress(msg: str) -> None:
+        if on_progress:
+            on_progress(msg)
+
     api_key = os.environ.get("ANTHROPIC_API_KEY")
     if not api_key:
         raise RuntimeError("ANTHROPIC_API_KEY is not set")
 
     import io
 
+    _progress("이미지 전처리 중...")
     image = load_image_rgb(image_bytes)
     image, rotation_applied = auto_orient_duty_image(image)
     guessed_year, guessed_month = guess_month_and_year(filename)
@@ -463,7 +470,7 @@ def parse_duty_image_with_claude(
         "source": {"type": "base64", "media_type": "image/jpeg", "data": pil_to_base64(table_crop, "JPEG")},
     })
     if use_row_guides:
-        annotated = annotate_row_boundaries(rectified, y_bounds, DEFAULT_TEMPLATE)
+        annotated = annotate_row_boundaries(rectified, y_bounds, DEFAULT_TEMPLATE, max_width=guide_image_width)
         content.append({
             "type": "image",
             "source": {"type": "base64", "media_type": "image/jpeg", "data": pil_to_base64(annotated, "JPEG")},
@@ -476,6 +483,7 @@ def parse_duty_image_with_claude(
         "messages": [{"role": "user", "content": content}],
     }
 
+    _progress("Claude Vision 분석 중... (약 30초)")
     response_json = send_claude_request(payload, ssl_context)
     usage = response_json.get("usage", {})
     total_input_tokens  = int(usage.get("input_tokens", 0))
@@ -507,6 +515,7 @@ def parse_duty_image_with_claude(
             row_box = overlay_by_index.get(target_index)
             if not row_box:
                 continue
+            _progress(f"행 {target_index} 재판독 중...")
             refined, refine_response = request_row_refinement(
                 rectified,
                 row_box,
@@ -530,6 +539,8 @@ def parse_duty_image_with_claude(
                 }
             )
         rows = [by_index[index] for index in sorted(by_index)]
+
+    _progress("결과 정리 중...")
 
     if row_index is not None:
         rows = [row for row in rows if row["rowIndex"] == row_index]

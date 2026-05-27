@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import base64
 import io
+import json
 import subprocess
 import tempfile
 import shutil
@@ -14,24 +15,21 @@ from PIL import Image, ImageDraw, ImageFilter, ImageFont, ImageOps
 from . import _morphology as ndimage
 
 
-ROW_NAMES = [
-    "윤미영",
-    "구명임",
-    "이현진",
-    "장해진",
-    "이영미",
-    "이경순",
-    "김향수",
-    "최은영",
-    "유정숙",
-    "이은우",
-    "김영애",
-    "양일향",
-    "김우섭",
-    "김주희",
-    "김성남",
-    "김우진",
-]
+_NAMES_FILE = Path(__file__).resolve().parent.parent / "names.json"
+_NAMES_EXAMPLE = Path(__file__).resolve().parent.parent / "names.example.json"
+
+def _load_row_names() -> list[str]:
+    for candidate in (_NAMES_FILE, _NAMES_EXAMPLE):
+        if candidate.exists():
+            data = json.loads(candidate.read_text(encoding="utf-8"))
+            if isinstance(data, list) and data:
+                return [str(n) for n in data]
+    raise FileNotFoundError(
+        "names.json 파일이 없습니다. names.example.json을 복사해서 실제 이름으로 채워주세요.\n"
+        f"  cp names.example.json names.json"
+    )
+
+ROW_NAMES: list[str] = _load_row_names()
 
 SHIFT_MAP = {
     "D": "D",

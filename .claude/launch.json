@@ -3,9 +3,12 @@
   "configurations": [
     {
       "name": "nurse-duty",
-      "runtimeExecutable": "python3",
-      "runtimeArgs": ["-m", "http.server", "3000"],
-      "port": 3000
+      "runtimeExecutable": ".venv/bin/python",
+      "runtimeArgs": ["server.py"],
+      "port": 3000,
+      "env": {
+        "DOTENV_PATH": ".env"
+      }
     }
   ]
 }

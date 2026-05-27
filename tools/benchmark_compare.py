@@ -103,14 +103,14 @@ def main() -> None:
     answer = load_answer()
 
     variants = [
-        ("베이스라인 (보조선 없음, 재판독 없음)",
+        ("베이스라인 (보조선 없음)",
          dict(use_row_guides=False)),
-        ("파란 보조선 (1차 호출)",
-         dict(use_row_guides=True)),
-        ("재판독만 row4 (보조선 없음)",
-         dict(use_row_guides=False, refine_row_indices=[4])),
-        ("파란 보조선 + 재판독 row4",
-         dict(use_row_guides=True,  refine_row_indices=[4])),
+        ("보조선 2400px (현재 기본값)",
+         dict(use_row_guides=True, guide_image_width=2400)),
+        ("보조선 1600px",
+         dict(use_row_guides=True, guide_image_width=1600)),
+        ("보조선 1200px",
+         dict(use_row_guides=True, guide_image_width=1200)),
     ]
 
     results = []
