@@ -659,12 +659,12 @@
           grid-template-columns: 1fr;
         }
 
-        /* 모바일: 사이드패널 기본 숨김 */
-        .side-panel { display: none; }
+        /* 모바일: 사이드패널 항상 보임 (세로 스택) */
+        .side-panel { display: grid; grid-column: 1 / -1; }
 
-        /* 탭별 표시 제어 */
-        .shell.tab-import .side-panel,
-        .shell.tab-settings .side-panel { display: grid; max-width: none; grid-column: 1 / -1; }
+        /* import·settings 탭에서는 달력 숨김 */
+        .shell.tab-import .main-content,
+        .shell.tab-settings .main-content { display: none; }
 
         .weekday-grid { gap: 6px; }
       }
