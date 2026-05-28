@@ -841,15 +841,6 @@
 
           <!-- 홈 패널: 팀 -->
           <div class="pane is-active" data-pane="home">
-            <section class="card">
-              <div class="section-title">Team</div>
-
-              <div class="row" style="margin-bottom: 12px">
-                <input id="memberName" class="field" placeholder="예: 지은" />
-                <button class="btn btn-primary" id="addMemberBtn">추가</button>
-              </div>
-              <div class="team-list" id="teamList"></div>
-            </section>
             <section class="card" id="tutorialCard">
               <div class="section-title">사용법</div>
               <div style="display:grid;gap:10px;margin-top:4px">
@@ -857,7 +848,7 @@
                   <span class="tutorial-num">1</span>
                   <div>
                     <strong>이름 추가</strong><br>
-                    <span class="subtle">위 입력창에 이름을 쓰고 추가해요.</span>
+                    <span class="subtle">아래 입력창에 이름을 쓰고 추가해요.</span>
                   </div>
                 </div>
                 <div class="tutorial-step">
@@ -878,7 +869,7 @@
                   <span class="tutorial-num">4</span>
                   <div>
                     <strong>공유</strong><br>
-                    <span class="subtle">설정 탭에서 링크를 만들어 동료에게 보내요.</span>
+                    <span class="subtle">내보내기 탭에서 링크를 만들어 동료에게 보내요.</span>
                   </div>
                 </div>
               </div>
@@ -887,6 +878,15 @@
               <div class="section-title">앱으로 설치하기</div>
               <div id="installInstructions"></div>
               <button class="btn btn-primary" id="installPwaBtn" style="display:none;width:100%;margin-top:10px">홈 화면에 추가</button>
+            </section>
+            <section class="card">
+              <div class="section-title">Team</div>
+
+              <div class="row" style="margin-bottom: 12px">
+                <input id="memberName" class="field" placeholder="예: 지은" />
+                <button class="btn btn-primary" id="addMemberBtn">추가</button>
+              </div>
+              <div class="team-list" id="teamList"></div>
             </section>
           </div>
 
