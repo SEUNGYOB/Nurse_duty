@@ -1622,6 +1622,7 @@
             try { event = JSON.parse(line.slice(6)); } catch { continue; }
             if (event.type === "progress") {
               const pct = Object.entries(OCR_PROGRESS_MAP).find(([k]) => event.message.includes(k))?.[1] ?? null;
+              if (event.message.includes("거의 다")) nearlyDone = true;
               setOcrProgress(pct ?? parseInt(dom.ocrProgressBar.style.width) ?? 10, event.message);
             } else if (event.type === "result") {
               return event.data;
@@ -1658,11 +1659,15 @@
         dom.ocrStatusStatic.textContent = "";
         setOcrProgress(5, "사진 준비 중...");
 
-        // 경과 시간 타이머
+        // 남은 시간 타이머 (40초 기준)
+        const TOTAL_SEC = 40;
         const startTime = Date.now();
+        let nearlyDone = false;
         const elapsedTimer = setInterval(() => {
-          const sec = Math.floor((Date.now() - startTime) / 1000);
-          dom.ocrElapsed.textContent = `${sec}초`;
+          if (nearlyDone) { dom.ocrElapsed.textContent = "곧 완료..."; return; }
+          const elapsed = Math.floor((Date.now() - startTime) / 1000);
+          const remaining = Math.max(1, TOTAL_SEC - elapsed);
+          dom.ocrElapsed.textContent = `약 ${remaining}초 남음`;
         }, 1000);
 
         try {
