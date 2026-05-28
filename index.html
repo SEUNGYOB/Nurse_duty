@@ -834,7 +834,7 @@
             <section class="card" id="installCard" style="display:none">
               <div class="section-title">앱으로 설치하기</div>
               <div id="installInstructions"></div>
-              <button class="btn btn-primary" style="width:100%;margin-top:10px" id="installPwaBtn" style="display:none">홈 화면에 추가</button>
+              <button class="btn btn-primary" id="installPwaBtn" style="display:none;width:100%;margin-top:10px">홈 화면에 추가</button>
             </section>
           </div>
 
@@ -996,6 +996,15 @@
     </div>
 
     <script>
+      // beforeinstallprompt는 매우 일찍 발생하므로 스크립트 최상단에서 캡쳐
+      let _pwaInstallPrompt = null;
+      window.addEventListener("beforeinstallprompt", (e) => {
+        e.preventDefault();
+        _pwaInstallPrompt = e;
+        const btn = document.getElementById("installPwaBtn");
+        if (btn) btn.style.display = "";
+      });
+
       const STORAGE_KEY = "nurse-shift-board:v1";
       const SHIFT_LABELS = {
         day: "Day",
@@ -2036,46 +2045,38 @@
         const instructions = dom.installInstructions;
         const btn = dom.installPwaBtn;
         const isIos = /iphone|ipad|ipod/i.test(navigator.userAgent);
-        const isAndroid = /android/i.test(navigator.userAgent);
         const isStandalone = window.matchMedia("(display-mode: standalone)").matches
           || navigator.standalone === true;
 
-        if (isStandalone) return; // 이미 설치됨
+        if (isStandalone) return;
 
         card.style.display = "";
 
         if (isIos) {
           instructions.innerHTML =
-            `<div class="subtle" style="line-height:1.7">
-              Safari에서 하단 <strong>공유 버튼(□↑)</strong>을 누른 뒤<br>
-              <strong>"홈 화면에 추가"</strong>를 선택하세요.
+            `<div class="subtle" style="line-height:1.8">
+              ① Safari에서 이 페이지를 열어요<br>
+              ② 하단 <strong>공유(□↑)</strong> 버튼 탭<br>
+              ③ <strong>"홈 화면에 추가"</strong> 선택
             </div>`;
-        } else if (isAndroid) {
-          instructions.innerHTML =
-            `<div class="subtle" style="line-height:1.7">아래 버튼을 눌러 홈 화면에 추가하세요.</div>`;
-          btn.style.display = "";
         } else {
           instructions.innerHTML =
-            `<div class="subtle" style="line-height:1.7">
-              Chrome 주소창 오른쪽의 <strong>설치(⊕)</strong> 아이콘을 클릭하거나,<br>
-              아래 버튼을 누르세요.
-            </div>`;
-          btn.style.display = "";
+            `<div class="subtle" style="line-height:1.7">아래 버튼을 눌러 앱으로 설치하세요.</div>`;
+          // 이미 캡쳐된 경우 즉시 버튼 표시
+          if (_pwaInstallPrompt) btn.style.display = "";
         }
 
-        let deferredPrompt = null;
-        window.addEventListener("beforeinstallprompt", (e) => {
-          e.preventDefault();
-          deferredPrompt = e;
-          btn.style.display = "";
+        // 나중에 이벤트가 캡쳐될 때도 버튼 표시
+        window.addEventListener("beforeinstallprompt", () => {
+          if (!isIos) btn.style.display = "";
         });
 
         btn.addEventListener("click", async () => {
-          if (!deferredPrompt) return;
-          deferredPrompt.prompt();
-          const { outcome } = await deferredPrompt.userChoice;
+          if (!_pwaInstallPrompt) return;
+          _pwaInstallPrompt.prompt();
+          const { outcome } = await _pwaInstallPrompt.userChoice;
           if (outcome === "accepted") card.style.display = "none";
-          deferredPrompt = null;
+          _pwaInstallPrompt = null;
         });
       })();
     </script>
