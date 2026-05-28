@@ -2167,9 +2167,10 @@
 
         const ua = navigator.userAgent;
         const isIos = /iphone|ipad|ipod/i.test(ua);
-        // CriOS=Chrome, FxiOS=Firefox, OPiOS=Opera — iOS에서 Safari가 아닌 브라우저
-        const isIosNonSafari = isIos && /crios|fxios|opios|EdgiOS/i.test(ua);
-        const isIosSafari = isIos && !isIosNonSafari;
+        // 인앱 브라우저 + 비-Safari 브라우저 목록
+        const isIosNonSafari = isIos && /KAKAOTALK|Instagram|NAVER|CriOS|FxiOS|OPiOS|EdgiOS/i.test(ua);
+        // 진짜 Safari: Version/ 포함 + 비-Safari 목록 없음
+        const isIosSafari = isIos && /Version\//i.test(ua) && !isIosNonSafari;
         const isStandalone = window.matchMedia("(display-mode: standalone)").matches
           || navigator.standalone === true;
 
@@ -2253,8 +2254,11 @@
         if (isStandalone) return;
         if (!isIos) return;
 
-        const isIosSafari = /safari/i.test(ua) && !/crios|fxios|opios|EdgiOS/i.test(ua);
-        if (isIosSafari) return; // Safari 사용자는 설치 카드로 안내
+        // 인앱 브라우저 목록 — 이게 있으면 Safari가 아님
+        const isInApp = /KAKAOTALK|Instagram|NAVER|CriOS|FxiOS|OPiOS|EdgiOS/i.test(ua);
+        // 진짜 Safari: Version/ 포함 + 인앱 브라우저 아님
+        const isRealSafari = /Version\//i.test(ua) && !isInApp;
+        if (isRealSafari) return; // Safari 사용자는 설치 카드로 안내
 
         const DISMISS_KEY = "inapp-banner-v1";
         if (localStorage.getItem(DISMISS_KEY)) return;
