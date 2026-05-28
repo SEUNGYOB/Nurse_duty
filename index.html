@@ -1,2443 +1,343 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="ko">
-  <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Nurse Couple</title>
-    <link rel="manifest" href="/manifest.json" />
-    <meta name="theme-color" content="#1c7c7a" />
-    <meta name="apple-mobile-web-app-capable" content="yes" />
-    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
-    <meta name="apple-mobile-web-app-title" content="Nurse Couple" />
-    <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png" />
-    <style>
-      :root {
-        --bg: #f4efe7;
-        --bg-alt: #f7f2ea;
-        --panel: rgba(255, 255, 255, 0.72);
-        --panel-strong: #fffaf3;
-        --ink: #18202a;
-        --muted: #66707b;
-        --line: rgba(24, 32, 42, 0.12);
-        --shadow: 0 18px 60px rgba(40, 26, 8, 0.12);
-        --day: #f2b134;
-        --evening: #f07b5d;
-        --night: #355c7d;
-        --off: #b9c1c9;
-        --accent: #1c7c7a;
-        --accent-2: #d94f70;
-      }
-
-      * {
-        box-sizing: border-box;
-      }
-
-      html,
-      body {
-        margin: 0;
-        min-height: 100%;
-        background:
-          radial-gradient(circle at top left, rgba(217, 79, 112, 0.14), transparent 35%),
-          radial-gradient(circle at top right, rgba(28, 124, 122, 0.13), transparent 28%),
-          linear-gradient(180deg, var(--bg) 0%, var(--bg-alt) 100%);
-        color: var(--ink);
-        font-family: "Iowan Old Style", "Palatino Linotype", "Book Antiqua", Georgia, serif;
-      }
-
-      body {
-        padding: 24px;
-      }
-
-      .app {
-        max-width: 1280px;
-        margin: 0 auto;
-      }
-
-      .icon-rail {
-        display: flex;
-        flex-direction: row;
-        align-items: center;
-        gap: 4px;
-        padding: 6px 10px;
-        margin-bottom: 18px;
-      }
-
-      .shell {
-        display: grid;
-        grid-template-columns: 300px minmax(0, 1fr);
-        gap: 18px;
-        align-items: start;
-      }
-
-      .rail-btn {
-        width: auto;
-        height: 44px;
-        padding: 0 16px;
-        border-radius: 14px;
-        border: none;
-        background: transparent;
-        cursor: pointer;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        justify-content: center;
-        gap: 4px;
-        color: var(--muted);
-        font: 700 9px/1 system-ui, sans-serif;
-        text-transform: uppercase;
-        letter-spacing: .04em;
-        transition: background 0.15s, color 0.15s;
-      }
-      .rail-btn svg { width: 20px; height: 20px; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
-      .rail-btn:hover { background: rgba(28,124,122,0.1); color: var(--accent); }
-      .rail-btn.is-active { background: var(--accent); color: #fff; }
-
-      .pane { display: none; }
-      .pane.is-active { display: contents; }
-
-      .hero {
-        grid-column: 1 / -1;
-        display: flex;
-        justify-content: space-between;
-        align-items: end;
-        gap: 16px;
-        padding: 24px 24px 8px;
-      }
-
-      .eyebrow {
-        letter-spacing: 0.18em;
-        text-transform: uppercase;
-        font: 700 12px/1.2 system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-        color: var(--accent);
-      }
-
-      h1 {
-        margin: 8px 0 10px;
-        font-size: clamp(34px, 5vw, 58px);
-        line-height: 0.95;
-        letter-spacing: -0.05em;
-      }
-
-      .lead {
-        margin: 0;
-        max-width: 56ch;
-        color: var(--muted);
-        font: 500 15px/1.6 system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-      }
-
-      .status-pill {
-        align-self: start;
-        padding: 10px 14px;
-        border: 1px solid var(--line);
-        border-radius: 999px;
-        background: rgba(255, 255, 255, 0.56);
-        box-shadow: var(--shadow);
-        color: var(--ink);
-        font: 700 12px/1 system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-      }
-
-      .panel {
-        border: 1px solid var(--line);
-        border-radius: 28px;
-        background: var(--panel);
-        backdrop-filter: blur(16px);
-        box-shadow: var(--shadow);
-      }
-
-      .sidebar {
-        padding: 18px;
-        display: grid;
-        gap: 16px;
-        align-content: start;
-      }
-
-      .section-title {
-        margin: 0 0 10px;
-        font: 700 12px/1.2 system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-        text-transform: uppercase;
-        letter-spacing: 0.16em;
-        color: var(--muted);
-      }
-
-      .card {
-        padding: 16px;
-        border-radius: 22px;
-        background: rgba(255, 255, 255, 0.62);
-        border: 1px solid rgba(24, 32, 42, 0.08);
-      }
-
-      .team-list {
-        display: grid;
-        gap: 10px;
-      }
-
-      .member-row {
-        display: flex;
-        gap: 8px;
-        align-items: stretch;
-      }
-
-      .member {
-        flex: 1;
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        gap: 10px;
-        padding: 12px 14px;
-        border: 1px solid rgba(24, 32, 42, 0.08);
-        border-radius: 16px;
-        background: rgba(255, 255, 255, 0.76);
-        color: var(--ink);
-        cursor: pointer;
-        text-align: left;
-        transition: transform 0.15s ease, border-color 0.15s ease, background 0.15s ease;
-        font: 600 14px/1.2 system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-      }
-
-      .member-delete {
-        width: 42px;
-        border: 1px solid rgba(24, 32, 42, 0.08);
-        border-radius: 16px;
-        background: rgba(255, 255, 255, 0.76);
-        color: #9d4b4b;
-        cursor: pointer;
-        font: 800 16px/1 system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-      }
-
-      .member:hover {
-        transform: translateY(-1px);
-        border-color: rgba(28, 124, 122, 0.35);
-      }
-
-      .member.is-active {
-        background: rgba(28, 124, 122, 0.1);
-        border-color: rgba(28, 124, 122, 0.42);
-      }
-
-      .member small {
-        color: var(--muted);
-        font-weight: 500;
-      }
-
-      .row {
-        display: flex;
-        gap: 10px;
-        flex-wrap: wrap;
-      }
-
-      input,
-      button,
-      select,
-      textarea {
-        font: inherit;
-      }
-
-      .ocr-file-label {
-        display: block;
-        text-align: center;
-        cursor: pointer;
-        margin-bottom: 8px;
-      }
-
-      .ocr-hint {
-        text-align: center;
-        min-height: 18px;
-      }
-
-      #ocrImportBtn:disabled {
-        opacity: 0.45;
-        cursor: not-allowed;
-        transform: none;
-      }
-
-      .field {
-        width: 100%;
-        padding: 12px 14px;
-        border: 1px solid rgba(24, 32, 42, 0.12);
-        border-radius: 16px;
-        background: rgba(255, 255, 255, 0.88);
-        color: var(--ink);
-        outline: none;
-      }
-
-      .field:focus {
-        border-color: rgba(28, 124, 122, 0.55);
-        box-shadow: 0 0 0 4px rgba(28, 124, 122, 0.12);
-      }
-
-      .btn {
-        border: 0;
-        border-radius: 16px;
-        padding: 12px 14px;
-        cursor: pointer;
-        font: 700 14px/1 system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-        transition: transform 0.15s ease, box-shadow 0.15s ease, opacity 0.15s ease;
-      }
-
-      .btn:hover {
-        transform: translateY(-1px);
-      }
-
-      .btn-primary {
-        color: white;
-        background: linear-gradient(135deg, var(--accent), #14535a);
-        box-shadow: 0 12px 22px rgba(28, 124, 122, 0.22);
-      }
-
-      .btn-secondary {
-        color: var(--ink);
-        background: rgba(255, 255, 255, 0.84);
-        border: 1px solid rgba(24, 32, 42, 0.09);
-      }
-
-      .btn-ghost {
-        color: var(--muted);
-        background: transparent;
-      }
-
-      .content {
-        padding: 18px;
-        display: grid;
-        gap: 16px;
-      }
-
-      .topbar {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        gap: 16px;
-        flex-wrap: wrap;
-      }
-
-      .month-title {
-        margin: 0;
-        font-size: 28px;
-        letter-spacing: -0.04em;
-      }
-
-      .subtle {
-        margin: 4px 0 0;
-        color: var(--muted);
-        font: 500 14px/1.5 system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-      }
-
-      .calendar {
-        display: grid;
-        gap: 8px;
-      }
-
-      .weekday-grid {
-        display: grid;
-        grid-template-columns: 32px repeat(7, minmax(0, 1fr));
-        gap: 6px;
-      }
-
-      .day-grid {
-        display: flex;
-        flex-direction: column;
-        gap: 4px;
-      }
-
-      /* ── Week-based calendar layout ── */
-      .cal-week { display: flex; flex-direction: column; gap: 2px; }
-
-      .cal-num-row,
-      .cal-badge-row {
-        display: grid;
-        grid-template-columns: 32px repeat(7, minmax(0, 1fr));
-        gap: 4px;
-      }
-
-      .cal-num {
-        text-align: center;
-        font: 600 11px/1 system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-        color: var(--muted);
-        padding: 2px 0;
-      }
-      .cal-num.is-today { color: var(--accent); font-weight: 700; }
-
-      .cal-name-stack {
-        display: flex;
-        flex-direction: column;
-        align-items: flex-end;
-        justify-content: center;
-        gap: 8px;
-        padding-right: 4px;
-      }
-      .cal-name-stack span {
-        font: 700 10px/1 system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-      }
-      .cal-name-m1 { color: var(--accent); }
-      .cal-name-m2 { color: #f97316; }
-
-      .cal-day {
-        background: rgba(255, 255, 255, 0.68);
-        border: 1px solid rgba(24, 32, 42, 0.09);
-        border-radius: 10px;
-        min-height: 56px;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        justify-content: center;
-        gap: 4px;
-        cursor: pointer;
-        padding: 4px 2px;
-        transition: transform 0.15s ease, border-color 0.15s ease;
-        touch-action: manipulation;
-      }
-      .cal-day:hover { transform: translateY(-1px); border-color: rgba(28, 124, 122, 0.3); }
-      .cal-day.is-muted { opacity: 0.25; pointer-events: none; }
-      .cal-day.is-selected {
-        border-color: rgba(28, 124, 122, 0.7);
-        box-shadow: 0 0 0 3px rgba(28, 124, 122, 0.09);
-      }
-      .cal-day.is-today { background: rgba(28, 124, 122, 0.06); }
-      .cal-day.is-empty { background: transparent; border-color: transparent; cursor: default; }
-      .cal-day.is-common-off {
-        background: rgba(28, 124, 122, 0.1);
-        border-color: rgba(28, 124, 122, 0.32);
-      }
-
-      .share-code-display {
-        flex: 1;
-        padding: 12px 14px;
-        border: 1px solid rgba(24, 32, 42, 0.12);
-        border-radius: 16px;
-        background: rgba(255, 255, 255, 0.88);
-        font: 700 20px/1 system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-        letter-spacing: 0.12em;
-        text-align: center;
-        color: var(--accent);
-      }
-
-      .weekday {
-        color: var(--muted);
-        font: 700 12px/1 system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-        text-transform: uppercase;
-        letter-spacing: 0.12em;
-        padding: 0 10px;
-      }
-
-      .day {
-        min-height: 128px;
-        padding: 10px;
-        border-radius: 20px;
-        border: 1px solid rgba(24, 32, 42, 0.09);
-        background: rgba(255, 255, 255, 0.68);
-        text-align: left;
-        cursor: pointer;
-        display: flex;
-        flex-direction: column;
-        gap: 10px;
-        position: relative;
-        overflow: hidden;
-        transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease;
-        touch-action: manipulation;
-      }
-
-      .day:hover {
-        transform: translateY(-1px);
-        border-color: rgba(28, 124, 122, 0.3);
-        box-shadow: 0 12px 24px rgba(44, 38, 28, 0.08);
-      }
-
-      .day.is-muted {
-        opacity: 0.42;
-      }
-
-      .day.is-selected {
-        border-color: rgba(28, 124, 122, 0.7);
-        box-shadow: 0 0 0 4px rgba(28, 124, 122, 0.09);
-      }
-
-      .day-number {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        font: 700 15px/1 system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-      }
-
-      .day-badge {
-        padding: 5px 9px;
-        border-radius: 999px;
-        color: white;
-        font: 700 11px/1 system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-        letter-spacing: 0.02em;
-      }
-
-      .day-shift-list {
-        display: grid;
-        gap: 6px;
-      }
-
-      .day-shift-row {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        gap: 8px;
-        min-width: 0;
-        padding-top: 2px;
-      }
-
-      .day-shift-name {
-        min-width: 0;
-        color: var(--muted);
-        font: 600 12px/1.2 system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        white-space: nowrap;
-      }
-
-      .day-shift-empty {
-        color: rgba(24, 32, 42, 0.32);
-        font: 600 12px/1 system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-      }
-
-      .badge-day { background: var(--day); color: #2f250f; }
-      .badge-evening { background: var(--evening); }
-      .badge-night { background: var(--night); }
-      .badge-s { background: #2a9d5c; }
-      .badge-annual { background: #7c5cbf; }
-      .badge-off { background: var(--off); color: #25303a; }
-
-      .shift-time-row {
-        display: grid;
-        grid-template-columns: 52px 1fr 10px 1fr;
-        gap: 6px;
-        align-items: center;
-      }
-      .shift-time-label {
-        padding: 4px 0;
-        border-radius: 8px;
-        font: 700 11px/1 system-ui, sans-serif;
-        text-align: center;
-        color: #fff;
-        letter-spacing: .04em;
-      }
-      .shift-time-label.badge-day { color: #2f250f; }
-      .shift-time-sep { text-align: center; color: var(--muted); font-size: 13px; }
-      .shift-time-input { padding: 8px 10px; font-size: 13px; }
-
-      .calendar-note {
-        margin-top: auto;
-        color: var(--muted);
-        font: 500 12px/1.4 system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-      }
-
-      .details {
-        display: grid;
-        gap: 12px;
-      }
-
-      .detail-head {
-        display: flex;
-        justify-content: space-between;
-        gap: 16px;
-        align-items: center;
-        flex-wrap: wrap;
-      }
-
-      .detail-title {
-        margin: 0;
-        font-size: 24px;
-        letter-spacing: -0.04em;
-      }
-
-      .shift-pills {
-        display: grid;
-        grid-template-columns: repeat(6, minmax(0, 1fr));
-        gap: 10px;
-      }
-
-      .shift-btn {
-        padding: 14px 12px;
-        border-radius: 18px;
-        border: 1px solid rgba(24, 32, 42, 0.08);
-        background: rgba(255, 255, 255, 0.86);
-        color: var(--ink);
-        cursor: pointer;
-        font: 800 13px/1 system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-        touch-action: manipulation;
-      }
-
-      .shift-btn.is-active {
-        border-color: rgba(28, 124, 122, 0.55);
-        box-shadow: 0 0 0 4px rgba(28, 124, 122, 0.08);
-      }
-
-      .shift-btn[data-shift="day"]     { color: #8a5b00; }
-      .shift-btn[data-shift="evening"] { color: #a93e29; }
-      .shift-btn[data-shift="night"]   { color: #244460; }
-      .shift-btn[data-shift="s"]       { color: #1a6b3c; }
-      .shift-btn[data-shift="annual"]  { color: #4e3480; }
-      .shift-btn[data-shift="off"]     { color: #5c6974; }
-
-      .stats {
-        display: grid;
-        grid-template-columns: repeat(4, minmax(0, 1fr));
-        gap: 10px;
-      }
-
-      .stat {
-        padding: 14px;
-        border-radius: 18px;
-        background: rgba(255, 255, 255, 0.74);
-        border: 1px solid rgba(24, 32, 42, 0.08);
-      }
-
-      .stat strong {
-        display: block;
-        font-size: 24px;
-        line-height: 1;
-      }
-
-      .stat span {
-        display: block;
-        margin-top: 8px;
-        color: var(--muted);
-        font: 600 12px/1.2 system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-        text-transform: uppercase;
-        letter-spacing: 0.12em;
-      }
-
-        .stat small {
-        display: block;
-        margin-top: 8px;
-        color: var(--muted);
-        font: 500 12px/1.45 system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-      }
-
-      .toast {
-        position: fixed;
-        bottom: 28px;
-        left: 50%;
-        transform: translateX(-50%);
-        background: #1a2332;
-        color: #fff;
-        font: 600 14px/1.4 system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-        padding: 10px 20px;
-        border-radius: 24px;
-        white-space: nowrap;
-        pointer-events: none;
-        opacity: 0;
-        transition: opacity 0.2s;
-        z-index: 9999;
-      }
-      .toast.visible { opacity: 1; }
-
-      .empty {
-        padding: 18px;
-        border: 1px dashed rgba(24, 32, 42, 0.16);
-        border-radius: 18px;
-        background: rgba(255, 255, 255, 0.5);
-        color: var(--muted);
-        font: 500 14px/1.5 system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-      }
-
-      .calendar-empty {
-        grid-column: 1 / -1;
-        padding: 18px;
-        border: 1px dashed rgba(24, 32, 42, 0.16);
-        border-radius: 20px;
-        background: rgba(255, 255, 255, 0.5);
-        color: var(--muted);
-        font: 500 14px/1.5 system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-      }
-
-      /* ── FAQ 아코디언 ── */
-      .faq-item {
-        border-bottom: 1px solid var(--line);
-      }
-      .faq-item:last-child { border-bottom: none; }
-      .faq-q {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        padding: 12px 0;
-        font: 600 14px/1.4 system-ui, -apple-system, sans-serif;
-        color: var(--ink);
-        cursor: pointer;
-        list-style: none;
-        gap: 8px;
-      }
-      .faq-q::-webkit-details-marker { display: none; }
-      .faq-q::after {
-        content: "+";
-        flex-shrink: 0;
-        font-size: 18px;
-        color: var(--muted);
-        transition: transform 0.2s;
-      }
-      details[open] .faq-q::after {
-        transform: rotate(45deg);
-      }
-      .faq-a {
-        padding: 0 0 14px;
-        font: 500 13px/1.7 system-ui, -apple-system, sans-serif;
-        color: var(--muted);
-      }
-
-      /* ── 인앱 브라우저 배너 ── */
-      #inappBanner {
-        display: none;
-        align-items: flex-start;
-        gap: 10px;
-        padding: 12px 16px;
-        background: #1a3020;
-        color: #e8f5ec;
-        font: 500 13px/1.5 system-ui, -apple-system, sans-serif;
-      }
-      #inappBannerText {
-        flex: 1;
-      }
-      #inappCopyBtn {
-        flex-shrink: 0;
-        padding: 5px 12px;
-        border-radius: 20px;
-        border: 1px solid rgba(255,255,255,0.35);
-        background: rgba(255,255,255,0.12);
-        color: #fff;
-        font: 600 12px/1 system-ui, sans-serif;
-        cursor: pointer;
-        white-space: nowrap;
-      }
-      #inappCopyBtn:disabled {
-        opacity: 0.6;
-      }
-      #inappDismissBtn {
-        flex-shrink: 0;
-        background: none;
-        border: none;
-        color: rgba(255,255,255,0.6);
-        font-size: 16px;
-        cursor: pointer;
-        padding: 2px 4px;
-        line-height: 1;
-      }
-
-      .install-steps {
-        display: flex;
-        flex-direction: column;
-        gap: 10px;
-        margin: 4px 0 2px;
-      }
-      .install-step {
-        display: flex;
-        align-items: center;
-        gap: 10px;
-        font: 500 14px/1.4 system-ui, -apple-system, sans-serif;
-        color: var(--ink);
-      }
-      .install-step-num {
-        flex-shrink: 0;
-        width: 24px;
-        height: 24px;
-        border-radius: 50%;
-        background: var(--accent);
-        color: #fff;
-        font: 700 12px/24px system-ui, sans-serif;
-        text-align: center;
-      }
-      .install-step-icon {
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        width: 26px;
-        height: 26px;
-        border-radius: 6px;
-        background: #e8f5f5;
-        flex-shrink: 0;
-      }
-      .install-warn {
-        display: flex;
-        align-items: flex-start;
-        gap: 10px;
-        padding: 12px 14px;
-        background: #fff8e8;
-        border: 1px solid #f5d97a;
-        border-radius: 14px;
-        font: 500 13px/1.5 system-ui, -apple-system, sans-serif;
-        color: #5a4200;
-      }
-
-      /* 설정·가져오기 탭에서는 달력 숨기고 사이드패널만 표시 (모든 해상도) */
-      .shell.tab-settings .main-content,
-      .shell.tab-export .main-content,
-      .shell.tab-import .main-content { display: none; }
-
-      .shell.tab-settings .side-panel,
-      .shell.tab-export .side-panel,
-      .shell.tab-import .side-panel {
-        grid-column: 1 / -1;
-        max-width: 520px;
-      }
-
-      @media (max-width: 1080px) {
-        .shell {
-          grid-template-columns: 1fr;
-        }
-
-        /* 모바일: 사이드패널 항상 보임 (세로 스택) */
-        .side-panel { display: grid; grid-column: 1 / -1; }
-
-        /* import·export·settings 탭에서는 달력 숨김 */
-        .shell.tab-import .main-content,
-        .shell.tab-export .main-content,
-        .shell.tab-settings .main-content { display: none; }
-
-        .weekday-grid { gap: 6px; }
-      }
-
-      .tutorial-step {
-        display: flex;
-        gap: 12px;
-        align-items: flex-start;
-        font: 500 14px/1.5 system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-      }
-
-      .tutorial-num {
-        flex-shrink: 0;
-        width: 26px;
-        height: 26px;
-        border-radius: 50%;
-        background: var(--accent);
-        color: #fff;
-        font: 700 13px/26px system-ui, sans-serif;
-        text-align: center;
-      }
-
-      @media (max-width: 720px) {
-        body {
-          padding: 6px;
-        }
-
-        .hero {
-          padding: 6px 4px 2px;
-        }
-
-        .content,
-        .sidebar {
-          padding: 8px;
-        }
-
-        .calendar {
-          gap: 2px;
-        }
-
-        .weekday-grid {
-          gap: 2px;
-          margin-bottom: 2px;
-        }
-
-        .weekday {
-          padding: 0 2px;
-          font-size: 10px;
-          letter-spacing: 0.06em;
-        }
-
-        .day-grid { gap: 2px; }
-
-        .cal-num-row,
-        .cal-badge-row { gap: 2px; }
-
-        .cal-num { font-size: 10px; }
-
-        .cal-name-stack { gap: 6px; padding-right: 3px; }
-        .cal-name-stack span { font-size: 9px; }
-
-        .cal-day {
-          min-height: 48px;
-          border-radius: 7px;
-          gap: 3px;
-          padding: 3px 2px;
-        }
-
-        .day-badge {
-          padding: 3px 5px;
-          font-size: 9px;
-        }
-
-        .stats {
-          grid-template-columns: repeat(2, minmax(0, 1fr));
-        }
-
-        .shift-pills {
-          grid-template-columns: repeat(3, minmax(0, 1fr));
-        }
-
-        .subtle {
-          font-size: 13px;
-        }
-
-        .month-title {
-          font-size: 24px;
-        }
-
-        .detail-title {
-          font-size: 20px;
-        }
-      }
-    </style>
-  </head>
-  <body>
-    <div class="app">
-      <!-- 인앱 브라우저 배너 -->
-      <div id="inappBanner">
-        <span id="inappBannerText"></span>
-        <button id="inappCopyBtn">주소 복사</button>
-        <button id="inappDismissBtn">✕</button>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Nurse Couple</title>
+  <script>
+    // PWA로 설치된 경우 바로 앱으로 이동
+    if (window.matchMedia("(display-mode: standalone)").matches || navigator.standalone) {
+      window.location.replace("/app.html");
+    }
+  </script>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Helvetica Neue", sans-serif;
+      background: #F8F6FB;
+      color: #18202a;
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    /* 헤더 */
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 24px 28px;
+      position: relative;
+      z-index: 10;
+    }
+
+    .logo {
+      font-size: 18px;
+      font-weight: 700;
+      color: #18202a;
+      letter-spacing: -0.02em;
+    }
+
+    .logo span {
+      color: #A794C4;
+    }
+
+    /* 히어로 섹션 */
+    .hero {
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .hero-gradient {
+      position: absolute;
+      inset: 0;
+      background:
+        radial-gradient(ellipse at top left, #EDE4FF 0%, transparent 55%),
+        radial-gradient(ellipse at bottom right, #FFD6E8 0%, transparent 50%),
+        radial-gradient(ellipse at center, #d8d8e8 0%, transparent 60%),
+        #F8F6FB;
+      z-index: 0;
+    }
+
+    .hero-content {
+      position: relative;
+      z-index: 1;
+      padding: 60px 28px 0;
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .eyebrow {
+      font-size: 13px;
+      font-weight: 600;
+      color: #A794C4;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      margin-bottom: 20px;
+    }
+
+    .hero-title {
+      font-size: clamp(38px, 9vw, 72px);
+      font-weight: 800;
+      line-height: 1.05;
+      letter-spacing: -0.03em;
+      color: #18202a;
+      margin-bottom: 28px;
+    }
+
+    .hero-title em {
+      font-style: normal;
+      color: #A794C4;
+    }
+
+    .hero-sub {
+      font-size: 17px;
+      color: #66707b;
+      line-height: 1.6;
+      max-width: 340px;
+      margin-bottom: 40px;
+    }
+
+    .cta-wrap {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      margin-bottom: 60px;
+    }
+
+    .btn-cta {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      background: #18202a;
+      color: white;
+      padding: 16px 28px;
+      border-radius: 16px;
+      font-size: 16px;
+      font-weight: 600;
+      border: none;
+      cursor: pointer;
+      text-decoration: none;
+      transition: transform 0.15s, opacity 0.15s;
+    }
+
+    .btn-cta:hover { opacity: 0.88; transform: translateY(-1px); }
+
+    .btn-secondary {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      background: transparent;
+      color: #66707b;
+      padding: 14px 28px;
+      border-radius: 16px;
+      font-size: 15px;
+      font-weight: 500;
+      border: 1.5px solid rgba(167,148,196,0.35);
+      cursor: pointer;
+      text-decoration: none;
+    }
+
+    /* 카드 섹션 - 기능 강조 */
+    .feature-card {
+      background: rgba(255,255,255,0.72);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border: 1px solid rgba(215, 191, 255, 0.3);
+      border-radius: 24px;
+      padding: 24px;
+      margin: 0 0 16px;
+    }
+
+    .feature-icon {
+      font-size: 32px;
+      margin-bottom: 14px;
+    }
+
+    .feature-label {
+      font-size: 11px;
+      font-weight: 600;
+      color: #A794C4;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      margin-bottom: 8px;
+    }
+
+    .feature-title {
+      font-size: 22px;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      margin-bottom: 8px;
+      line-height: 1.2;
+    }
+
+    .feature-desc {
+      font-size: 14px;
+      color: #66707b;
+      line-height: 1.6;
+    }
+
+    /* 스크린샷 업로드 강조 */
+    .ocr-card {
+      background: linear-gradient(135deg, #EDE4FF, #D7BFFF);
+      border-radius: 24px;
+      padding: 28px 24px;
+      margin-bottom: 16px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .ocr-card::after {
+      content: "";
+      position: absolute;
+      bottom: -20px;
+      right: -20px;
+      width: 120px;
+      height: 120px;
+      background: rgba(255,255,255,0.2);
+      border-radius: 50%;
+    }
+
+    .ocr-step {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+
+    .ocr-step:last-child { margin-bottom: 0; }
+
+    .ocr-num {
+      width: 32px;
+      height: 32px;
+      background: rgba(255,255,255,0.4);
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 14px;
+      font-weight: 700;
+      color: #6E5BA8;
+      flex-shrink: 0;
+    }
+
+    .ocr-text strong {
+      display: block;
+      font-size: 15px;
+      font-weight: 600;
+      color: #18202a;
+      margin-bottom: 2px;
+    }
+
+    .ocr-text span {
+      font-size: 13px;
+      color: #6E5BA8;
+    }
+
+    /* 듀티 배지 미리보기 */
+    .duty-preview {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin-top: 16px;
+    }
+
+    .duty-badge {
+      padding: 6px 14px;
+      border-radius: 20px;
+      font-size: 13px;
+      font-weight: 600;
+    }
+
+    .duty-badge.day    { background: #FFD166; color: #7a5c00; }
+    .duty-badge.eve    { background: #F4A261; color: white; }
+    .duty-badge.night  { background: #2A4E7C; color: white; }
+    .duty-badge.off    { background: #C4B5D4; color: #5a4a6a; }
+
+    /* 하단 여백 */
+    .bottom-pad { height: 80px; }
+  </style>
+</head>
+<body>
+  <div class="hero">
+    <div class="hero-gradient"></div>
+
+    <header class="header">
+      <div class="logo">Nurse<span>Couple</span></div>
+    </header>
+
+    <div class="hero-content">
+      <div class="eyebrow">간호사 듀티 공유 앱</div>
+
+      <h1 class="hero-title">
+        근무표 사진 한 장,<br>
+        두 사람의<br>
+        <em>일정이 됩니다.</em>
+      </h1>
+
+      <p class="hero-sub">
+        사진만 찍으면 자동으로 입력돼요.<br>
+        상대방과 공유하고 함께 보는 달력.
+      </p>
+
+      <div class="cta-wrap">
+        <a href="./app.html" class="btn-cta">
+          📅 지금 시작하기
+        </a>
+        <a href="#how" class="btn-secondary">
+          어떻게 작동하나요?
+        </a>
       </div>
 
-      <div class="hero">
-        <h1>Nurse Couple</h1>
-      </div>
+      <!-- OCR 기능 강조 카드 -->
+      <div class="ocr-card" id="how">
+        <div class="feature-label">핵심 기능</div>
+        <div class="feature-title" style="margin-bottom:20px; color:#18202a">📸 사진 → 자동 입력</div>
 
-      <!-- ── 탭 바 ── -->
-      <nav class="icon-rail panel">
-        <button class="rail-btn is-active" data-tab="home">
-          <svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
-          달력
-        </button>
-        <button class="rail-btn" data-tab="import">
-          <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-          가져오기
-        </button>
-        <button class="rail-btn" data-tab="export">
-          <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
-          내보내기
-        </button>
-        <button class="rail-btn" data-tab="settings">
-          <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
-          설정
-        </button>
-      </nav>
-
-      <div class="shell">
-
-        <!-- ── 사이드 패널 ── -->
-        <aside class="side-panel panel sidebar">
-
-          <!-- 홈 패널: 팀 -->
-          <div class="pane is-active" data-pane="home">
-            <section class="card" id="installCard" style="display:none">
-              <div class="section-title">앱으로 설치하기</div>
-              <div id="installInstructions"></div>
-              <button class="btn btn-primary" id="installPwaBtn" style="display:none;width:100%;margin-top:10px">홈 화면에 추가</button>
-            </section>
-            <section class="card" id="tutorialCard">
-              <div class="section-title">사용법</div>
-              <div style="display:grid;gap:10px;margin-top:4px">
-                <div class="tutorial-step">
-                  <span class="tutorial-num">1</span>
-                  <div>
-                    <strong>이름 추가</strong><br>
-                    <span class="subtle">아래 입력창에 이름을 쓰고 추가해요.</span>
-                  </div>
-                </div>
-                <div class="tutorial-step">
-                  <span class="tutorial-num">2</span>
-                  <div>
-                    <strong>근무표 사진으로 자동 입력</strong><br>
-                    <span class="subtle">가져오기 탭에서 근무표 사진을 올리면 듀티가 자동으로 채워져요.</span>
-                  </div>
-                </div>
-                <div class="tutorial-step">
-                  <span class="tutorial-num">3</span>
-                  <div>
-                    <strong>직접 입력</strong><br>
-                    <span class="subtle">달력에서 날짜를 탭하고 Day · Eve · Night 버튼으로 채워요.</span>
-                  </div>
-                </div>
-                <div class="tutorial-step">
-                  <span class="tutorial-num">4</span>
-                  <div>
-                    <strong>공유</strong><br>
-                    <span class="subtle">내보내기 탭에서 링크를 만들어 동료에게 보내요.</span>
-                  </div>
-                </div>
-              </div>
-            </section>
-            <section class="card">
-              <div class="section-title">Team</div>
-
-              <div class="row" style="margin-bottom: 12px">
-                <input id="memberName" class="field" placeholder="예: 지은" />
-                <button class="btn btn-primary" id="addMemberBtn">추가</button>
-              </div>
-              <div class="team-list" id="teamList"></div>
-            </section>
+        <div class="ocr-step">
+          <div class="ocr-num">1</div>
+          <div class="ocr-text">
+            <strong>근무표 사진 찍기</strong>
+            <span>병동 근무표 사진을 그대로 올려요</span>
           </div>
-
-          <!-- 가져오기 패널: OCR -->
-          <div class="pane" data-pane="import">
-          <section class="card">
-            <div class="section-title">근무표 가져오기</div>
-            <div class="empty" style="margin-bottom: 12px">근무표 사진을 올리면 선택한 팀원의 듀티를 자동으로 채워드려요.</div>
-
-            <label for="ocrFileInput" class="btn btn-secondary ocr-file-label">사진 선택</label>
-            <input type="file" id="ocrFileInput" accept="image/*" style="display:none" />
-            <div id="ocrFileName" class="subtle ocr-hint" style="margin-bottom: 10px"></div>
-
-            <div style="margin-bottom: 10px">
-              <div class="subtle" style="margin-bottom: 6px">근무표 연월</div>
-              <div style="display:flex;gap:6px">
-                <select id="ocrYearSelect" class="field" style="cursor:pointer;flex:1"></select>
-                <select id="ocrMonthSelect" class="field" style="cursor:pointer;flex:1">
-                  <option value="1">1월</option><option value="2">2월</option>
-                  <option value="3">3월</option><option value="4">4월</option>
-                  <option value="5">5월</option><option value="6">6월</option>
-                  <option value="7">7월</option><option value="8">8월</option>
-                  <option value="9">9월</option><option value="10">10월</option>
-                  <option value="11">11월</option><option value="12">12월</option>
-                </select>
-              </div>
-            </div>
-
-            <button class="btn btn-secondary" style="width:100%;margin-bottom:8px" id="ocrRecognizeBtn" disabled>인식하기</button>
-
-            <div style="margin-bottom: 10px;display:none" id="ocrRowWrap">
-              <div class="subtle" style="margin-bottom: 6px">내 이름 선택</div>
-              <select id="ocrRowSelect" class="field" style="cursor:pointer"></select>
-            </div>
-
-            <button class="btn btn-primary" style="width:100%;margin-bottom:8px" id="ocrImportBtn" disabled>가져오기</button>
-            <div id="ocrProgressWrap" style="display:none;margin-bottom:8px">
-              <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:5px">
-                <span id="ocrStatus" class="subtle ocr-hint" style="flex:1"></span>
-                <span id="ocrElapsed" class="subtle" style="font-size:12px;color:var(--muted);margin-left:8px;white-space:nowrap"></span>
-              </div>
-              <div style="height:5px;background:rgba(24,32,42,0.1);border-radius:4px;overflow:hidden">
-                <div id="ocrProgressBar" style="height:100%;width:0%;background:var(--accent);border-radius:4px;transition:width 0.5s ease"></div>
-              </div>
-            </div>
-            <div id="ocrStatusStatic" class="subtle ocr-hint"></div>
-            <p style="font-size:11px;color:#aaa;margin-top:8px;line-height:1.5">업로드된 원본 사진은 분석 후 즉시 삭제되며, 이름이 제거된 익명 데이터는 서비스 개선에 활용될 수 있습니다.</p>
-          </section>
-          </div><!-- /pane import -->
-
-          <!-- 내보내기 패널: 공유 + 캘린더 내보내기 -->
-          <div class="pane" data-pane="export">
-          <section class="card">
-            <div class="section-title">공유</div>
-            <div class="empty" style="margin-bottom: 12px">내 듀티 링크를 만들어 카카오톡·문자로 보내세요. 상대방이 링크를 열면 자동으로 함께 볼 수 있어요.</div>
-
-            <div style="margin-bottom:10px">
-              <div class="subtle" style="margin-bottom:6px">공유할 팀원</div>
-              <select id="shareMemberSelect" class="field" style="cursor:pointer"></select>
-            </div>
-            <button class="btn btn-primary" style="width:100%;margin-bottom:8px" id="shareCreateBtn">내 듀티 링크 만들기</button>
-
-            <div id="shareCodeWrap" style="display:none;margin-bottom:4px">
-              <div class="subtle" style="margin-bottom:6px">공유 코드</div>
-              <div style="display:flex;gap:6px;align-items:center;margin-bottom:10px">
-                <div class="share-code-display" id="shareCodeText"></div>
-                <button class="btn btn-secondary" id="shareCopyCodeBtn" style="white-space:nowrap">코드 복사</button>
-              </div>
-              <button class="btn btn-primary" style="width:100%;font-size:15px;padding:14px" id="shareNativeBtn">
-                공유하기 (카카오톡 · 문자 · 기타)
-              </button>
-              <button class="btn btn-secondary" style="width:100%;margin-top:6px" id="shareCopyLinkBtn">링크만 복사</button>
-            </div>
-
-            <div style="margin-top:12px;padding-top:12px;border-top:1px solid var(--line)">
-              <div class="subtle" style="margin-bottom:6px">상대방 코드 직접 입력</div>
-              <div style="display:flex;gap:6px">
-                <input id="shareJoinInput" class="field" placeholder="ABC123" maxlength="6"
-                  style="text-transform:uppercase;letter-spacing:.1em;font-weight:700;flex:1" />
-                <button class="btn btn-secondary" id="shareJoinBtn">가져오기</button>
-              </div>
-            </div>
-            <div id="shareStatus" class="subtle ocr-hint" style="margin-top:8px"></div>
-          </section>
-
-          <section class="card">
-            <div class="section-title">캘린더로 내보내기</div>
-            <div class="subtle" style="margin-bottom:12px">구글·애플 캘린더에 근무 일정을 추가해요.</div>
-            <div style="margin-bottom:10px">
-              <div class="subtle" style="margin-bottom:6px">누구의 일정</div>
-              <select id="exportMemberSelect" class="field" style="cursor:pointer"></select>
-            </div>
-            <button class="btn btn-primary" style="width:100%" id="exportCalBtn">📅 .ics 파일 저장</button>
-            <div id="exportCalStatus" class="subtle ocr-hint" style="margin-top:8px"></div>
-          </section>
-          </div><!-- /pane export -->
-
-          <!-- 설정 패널: 근무 시간 -->
-          <div class="pane" data-pane="settings">
-          <section class="card">
-            <div class="section-title">근무 시간 설정</div>
-            <div class="subtle" style="margin-bottom:12px">캘린더로 내보낼 때 사용할 시간이에요. 병원마다 다르니 한 번만 설정해 두세요.</div>
-            <div style="display:grid;gap:8px">
-              <div class="shift-time-row">
-                <span class="shift-time-label badge-day">Day</span>
-                <input type="time" id="timeDayStart" class="field shift-time-input" value="07:00">
-                <span class="shift-time-sep">~</span>
-                <input type="time" id="timeDayEnd" class="field shift-time-input" value="15:30">
-              </div>
-              <div class="shift-time-row">
-                <span class="shift-time-label badge-evening">Eve</span>
-                <input type="time" id="timeEveningStart" class="field shift-time-input" value="15:00">
-                <span class="shift-time-sep">~</span>
-                <input type="time" id="timeEveningEnd" class="field shift-time-input" value="23:30">
-              </div>
-              <div class="shift-time-row">
-                <span class="shift-time-label badge-night">Night</span>
-                <input type="time" id="timeNightStart" class="field shift-time-input" value="23:00">
-                <span class="shift-time-sep">~</span>
-                <input type="time" id="timeNightEnd" class="field shift-time-input" value="07:30">
-              </div>
-              <div class="shift-time-row">
-                <span class="shift-time-label badge-s">S</span>
-                <input type="time" id="timeSStart" class="field shift-time-input" value="08:00">
-                <span class="shift-time-sep">~</span>
-                <input type="time" id="timeSEnd" class="field shift-time-input" value="17:00">
-              </div>
-            </div>
-          </section>
-
-          <section class="card">
-            <div class="section-title">자주 묻는 질문</div>
-            <div style="display:grid;gap:0">
-
-              <details class="faq-item">
-                <summary class="faq-q">캘린더에 추가한 일정을 한번에 지우려면?</summary>
-                <div class="faq-a">
-                  가져오기 전에 새 캘린더를 먼저 만들어 두세요.<br>
-                  <strong>iPhone 캘린더 앱 → 캘린더 탭 → 캘린더 추가</strong>로 "듀티" 캘린더를 만든 뒤, 가져오기 화면에서 그 캘린더를 선택하면 나중에 캘린더 전체를 삭제해서 한번에 지울 수 있어요.
-                </div>
-              </details>
-
-              <details class="faq-item">
-                <summary class="faq-q">홈 화면에 앱으로 설치하려면?</summary>
-                <div class="faq-a">
-                  <strong>Safari</strong>에서만 설치할 수 있어요.<br>
-                  Safari로 이 페이지를 열고 → 하단 공유 버튼(□↑) → <strong>"홈 화면에 추가"</strong>를 선택하세요.
-                </div>
-              </details>
-
-              <details class="faq-item">
-                <summary class="faq-q">데이터가 사라졌어요</summary>
-                <div class="faq-a">
-                  입력한 근무 일정은 이 기기의 브라우저에만 저장돼요. 브라우저 데이터를 지우거나 다른 기기로 접속하면 보이지 않아요.<br>
-                  중요한 일정은 캘린더로 내보내 두세요.
-                </div>
-              </details>
-
-              <details class="faq-item">
-                <summary class="faq-q">사진 인식이 잘 안 돼요</summary>
-                <div class="faq-a">
-                  근무표 전체가 잘 보이도록 정면에서 촬영해 주세요. 그림자나 반사광이 있으면 인식률이 낮아져요. 밝은 곳에서 찍은 선명한 사진이 가장 잘 인식돼요.
-                </div>
-              </details>
-
-            </div>
-          </section>
-
-          <section class="card" style="text-align:center">
-            <div class="section-title">문의하기</div>
-            <p class="subtle" style="margin-bottom:12px">궁금한 점이나 오류가 있으면 메일로 알려주세요.</p>
-            <a href="mailto:nursycouple@gmail.com" class="btn btn-secondary" style="display:inline-block;text-decoration:none">
-              nursycouple@gmail.com
-            </a>
-          </section>
-          </div><!-- /pane settings -->
-
-        </aside>
-
-        <main class="panel content main-content" id="mainContent">
-          <div class="topbar">
-            <div>
-              <p class="section-title" style="margin-bottom: 6px">Calendar</p>
-              <h2 class="month-title" id="monthLabel">-</h2>
-            </div>
-            <div class="row">
-              <button class="btn btn-secondary" id="prevMonthBtn">이전 달</button>
-              <button class="btn btn-secondary" id="todayBtn">오늘</button>
-              <button class="btn btn-secondary" id="nextMonthBtn">다음 달</button>
-            </div>
+        </div>
+        <div class="ocr-step">
+          <div class="ocr-num">2</div>
+          <div class="ocr-text">
+            <strong>AI가 자동 인식</strong>
+            <span>내 이름 선택하면 듀티가 자동으로 채워져요</span>
           </div>
-
-          <section class="calendar">
-            <div class="weekday-grid" id="weekdayGrid"></div>
-            <div class="day-grid" id="dayGrid"></div>
-          </section>
-
-          <section class="card details">
-            <div class="detail-head">
-              <div>
-                <p class="section-title">Edit shift</p>
-                <h3 class="detail-title" id="selectedLabel">-</h3>
-              </div>
-              <div class="row">
-                <button class="btn btn-ghost" id="clearBtn">선택 취소</button>
-                <button class="btn btn-secondary" id="clearAllBtn">전체 삭제</button>
-              </div>
-            </div>
-
-            <div class="shift-pills" id="shiftButtons"></div>
-
-            <div class="toast" id="toast"></div>
-
-            <div class="stats" id="stats"></div>
-          </section>
-        </main>
+        </div>
+        <div class="ocr-step">
+          <div class="ocr-num">3</div>
+          <div class="ocr-text">
+            <strong>링크 공유</strong>
+            <span>코드 하나로 상대방 달력과 합쳐서 보기</span>
+          </div>
+        </div>
       </div>
+
+      <!-- 듀티 타입 미리보기 -->
+      <div class="feature-card">
+        <div class="feature-label">근무 유형</div>
+        <div class="feature-title">한눈에 보이는 듀티</div>
+        <p class="feature-desc">Day · Evening · Night · OFF 색상으로 구분해요.</p>
+        <div class="duty-preview">
+          <span class="duty-badge day">Day</span>
+          <span class="duty-badge eve">Evening</span>
+          <span class="duty-badge night">Night</span>
+          <span class="duty-badge off">OFF</span>
+        </div>
+      </div>
+
+      <div class="bottom-pad"></div>
     </div>
-
-    <script>
-      // beforeinstallprompt는 매우 일찍 발생하므로 스크립트 최상단에서 캡쳐
-      let _pwaInstallPrompt = null;
-      window.addEventListener("beforeinstallprompt", (e) => {
-        e.preventDefault();
-        _pwaInstallPrompt = e;
-        const btn = document.getElementById("installPwaBtn");
-        if (btn) btn.style.display = "";
-      });
-
-      const STORAGE_KEY = "nurse-shift-board:v1";
-      const SHIFT_LABELS = {
-        day: "Day",
-        evening: "Evening",
-        night: "Night",
-        s: "S",
-        annual: "연차",
-        off: "OFF",
-      };
-      const SHIFT_CLASS = {
-        day: "badge-day",
-        evening: "badge-evening",
-        night: "badge-night",
-        s: "badge-s",
-        annual: "badge-annual",
-        off: "badge-off",
-      };
-      const SHIFT_ORDER = ["day", "evening", "night", "s", "annual", "off"];
-
-      // OCR 코드(D/E/N/S/Y/off) → 프론트엔드 shift 키 변환
-      const OCR_TO_SHIFT = {
-        D: "day", E: "evening", N: "night",
-        S: "s", A: "annual",
-        off: "off", OFF: "off",
-      };
-      const WEEKDAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
-      const MAX_MEMBERS = 2;
-      const OCR_PREFS_KEY = "nurse-shift-board:ocr-prefs";
-      const dom = {
-        teamList: document.getElementById("teamList"),
-        memberName: document.getElementById("memberName"),
-        addMemberBtn: document.getElementById("addMemberBtn"),
-        toast: document.getElementById("toast"),
-        monthLabel: document.getElementById("monthLabel"),
-        prevMonthBtn: document.getElementById("prevMonthBtn"),
-        todayBtn: document.getElementById("todayBtn"),
-        nextMonthBtn: document.getElementById("nextMonthBtn"),
-        weekdayGrid: document.getElementById("weekdayGrid"),
-        dayGrid: document.getElementById("dayGrid"),
-        selectedLabel: document.getElementById("selectedLabel"),
-        shiftButtons: document.getElementById("shiftButtons"),
-        stats: document.getElementById("stats"),
-        clearBtn: document.getElementById("clearBtn"),
-        clearAllBtn: document.getElementById("clearAllBtn"),
-        ocrFileInput: document.getElementById("ocrFileInput"),
-        ocrYearSelect: document.getElementById("ocrYearSelect"),
-        ocrMonthSelect: document.getElementById("ocrMonthSelect"),
-        ocrRowSelect: document.getElementById("ocrRowSelect"),
-        ocrRowWrap: document.getElementById("ocrRowWrap"),
-        ocrRecognizeBtn: document.getElementById("ocrRecognizeBtn"),
-        ocrImportBtn: document.getElementById("ocrImportBtn"),
-        ocrFileName: document.getElementById("ocrFileName"),
-        ocrStatus: document.getElementById("ocrStatus"),
-        ocrStatusStatic: document.getElementById("ocrStatusStatic"),
-        ocrProgressWrap: document.getElementById("ocrProgressWrap"),
-        ocrProgressBar: document.getElementById("ocrProgressBar"),
-        ocrElapsed: document.getElementById("ocrElapsed"),
-        shareMemberSelect: document.getElementById("shareMemberSelect"),
-        shareCreateBtn: document.getElementById("shareCreateBtn"),
-        shareCodeWrap: document.getElementById("shareCodeWrap"),
-        shareCodeText: document.getElementById("shareCodeText"),
-        shareCopyCodeBtn: document.getElementById("shareCopyCodeBtn"),
-        shareNativeBtn: document.getElementById("shareNativeBtn"),
-        shareCopyLinkBtn: document.getElementById("shareCopyLinkBtn"),
-        shareJoinInput: document.getElementById("shareJoinInput"),
-        shareJoinBtn: document.getElementById("shareJoinBtn"),
-        shareStatus: document.getElementById("shareStatus"),
-        exportCalBtn: document.getElementById("exportCalBtn"),
-        exportCalStatus: document.getElementById("exportCalStatus"),
-        exportMemberSelect: document.getElementById("exportMemberSelect"),
-        installCard: document.getElementById("installCard"),
-        installInstructions: document.getElementById("installInstructions"),
-        installPwaBtn: document.getElementById("installPwaBtn"),
-        timeDayStart: document.getElementById("timeDayStart"),
-        timeDayEnd: document.getElementById("timeDayEnd"),
-        timeEveningStart: document.getElementById("timeEveningStart"),
-        timeEveningEnd: document.getElementById("timeEveningEnd"),
-        timeNightStart: document.getElementById("timeNightStart"),
-        timeNightEnd: document.getElementById("timeNightEnd"),
-        timeSStart: document.getElementById("timeSStart"),
-        timeSEnd: document.getElementById("timeSEnd"),
-      };
-
-      const now = new Date();
-      const storage = createStorage();
-      const state = normalizeState(loadState() ?? {
-        members: [
-          { id: crypto.randomUUID(), name: "민지" },
-          { id: crypto.randomUUID(), name: "현우" },
-        ],
-        activeMemberId: null,
-        currentMonth: now.getMonth(),
-        currentYear: now.getFullYear(),
-        selectedDate: isoDate(new Date(now.getFullYear(), now.getMonth(), now.getDate())),
-        shiftsByMember: {},
-      });
-
-      if (!state.activeMemberId && state.members.length) {
-        state.activeMemberId = state.members[0].id;
-      }
-      if (!state.shiftsByMember) {
-        state.shiftsByMember = {};
-      }
-      syncVisibleMonthToSelection();
-
-      // ── OCR 연월/행 초기화 (now · storage 정의 이후) ────────────────────────
-      (function initOcrPrefs() {
-        const thisYear = now.getFullYear();
-        [-1, 0, 1].forEach((delta) => {
-          const y = thisYear + delta;
-          const opt = document.createElement("option");
-          opt.value = y;
-          opt.textContent = `${y}년`;
-          dom.ocrYearSelect.appendChild(opt);
-        });
-        let prefs = {};
-        try { prefs = JSON.parse(storage.getItem(OCR_PREFS_KEY) ?? "{}"); } catch {}
-        dom.ocrYearSelect.value  = prefs.year  ?? thisYear;
-        dom.ocrMonthSelect.value = prefs.month ?? (now.getMonth() + 1);
-        dom.ocrRowSelect.value   = prefs.row   ?? "1";
-      })();
-
-      function loadOcrPrefs() {
-        try { return JSON.parse(storage.getItem(OCR_PREFS_KEY) ?? "{}"); } catch { return {}; }
-      }
-
-      function saveOcrPrefs() {
-        try {
-          storage.setItem(OCR_PREFS_KEY, JSON.stringify({
-            year:  dom.ocrYearSelect.value,
-            month: dom.ocrMonthSelect.value,
-            row:   dom.ocrRowSelect.value,
-          }));
-        } catch {}
-      }
-
-      dom.ocrYearSelect.addEventListener("change", saveOcrPrefs);
-      dom.ocrMonthSelect.addEventListener("change", saveOcrPrefs);
-      dom.ocrRowSelect.addEventListener("change", saveOcrPrefs);
-
-      let lastSeenDate = isoDate(new Date());
-
-      renderWeekdays();
-      renderAll();
-      startAutoRefresh();
-
-      dom.addMemberBtn.addEventListener("click", addMember);
-      dom.memberName.addEventListener("keydown", (event) => {
-        if (event.key === "Enter") addMember();
-      });
-      dom.prevMonthBtn.addEventListener("click", () => shiftMonth(-1));
-      dom.nextMonthBtn.addEventListener("click", () => shiftMonth(1));
-      dom.todayBtn.addEventListener("click", goToToday);
-      dom.clearBtn.addEventListener("click", () => {
-        state.selectedDate = null;
-        renderAll();
-      });
-      dom.clearAllBtn.addEventListener("click", clearAllShifts);
-
-      dom.ocrFileInput.addEventListener("change", () => {
-        const file = dom.ocrFileInput.files[0];
-        dom.ocrFileName.textContent = file ? file.name : "";
-        dom.ocrRecognizeBtn.disabled = !file;
-        dom.ocrImportBtn.disabled = true;
-        dom.ocrStatus.textContent = "";
-        _ocrAllRows = null;
-        dom.ocrRowWrap.style.display = "none";
-        dom.ocrRowSelect.innerHTML = "";
-      });
-
-      dom.ocrRecognizeBtn.addEventListener("click", recognizeOcr);
-      dom.ocrImportBtn.addEventListener("click", importFromOcr);
-
-      dom.shareCreateBtn.addEventListener("click", createShareCode);
-      dom.shareCopyCodeBtn.addEventListener("click", () => {
-        copyToClipboard(dom.shareCodeText.textContent, "코드를 복사했어요!");
-      });
-      dom.shareNativeBtn.addEventListener("click", shareNative);
-      dom.shareCopyLinkBtn.addEventListener("click", () => {
-        copyToClipboard(shareUrl(dom.shareCodeText.textContent), "링크를 복사했어요!");
-      });
-      dom.shareJoinBtn.addEventListener("click", joinWithCode);
-      dom.shareJoinInput.addEventListener("keydown", (e) => {
-        if (e.key === "Enter") joinWithCode();
-      });
-
-      dom.exportCalBtn.addEventListener("click", exportCalendar);
-
-      // ── 아이콘 레일 탭 전환 ──────────────────────────────────────────────
-      const shellEl = document.querySelector(".shell");
-
-      function switchTab(tab) {
-        // 레일 버튼 활성화
-        document.querySelectorAll(".rail-btn").forEach(b =>
-          b.classList.toggle("is-active", b.dataset.tab === tab));
-        // 패널 콘텐츠 교체
-        document.querySelectorAll(".pane").forEach(p =>
-          p.classList.toggle("is-active", p.dataset.pane === tab));
-        // shell 클래스로 모바일 표시 제어 (CSS가 처리)
-        shellEl.className = shellEl.className.replace(/\btab-\w+\b/g, "").trim();
-        shellEl.classList.add(`tab-${tab}`);
-      }
-
-      document.querySelectorAll(".rail-btn").forEach(btn =>
-        btn.addEventListener("click", () => switchTab(btn.dataset.tab)));
-
-      switchTab("home");
-
-      // ── 근무 시간 설정 ────────────────────────────────────────────────────
-      const SHIFT_TIMES_KEY = "nurse-shift-board:shift-times";
-      const DEFAULT_SHIFT_TIMES = {
-        day:     { start: "07:00", end: "15:30" },
-        evening: { start: "15:00", end: "23:30" },
-        night:   { start: "23:00", end: "07:30" },
-        s:       { start: "08:00", end: "17:00" },
-      };
-
-      function loadShiftTimes() {
-        try { return JSON.parse(localStorage.getItem(SHIFT_TIMES_KEY)) ?? { ...DEFAULT_SHIFT_TIMES }; }
-        catch { return { ...DEFAULT_SHIFT_TIMES }; }
-      }
-
-      function saveShiftTimes() {
-        localStorage.setItem(SHIFT_TIMES_KEY, JSON.stringify({
-          day:     { start: dom.timeDayStart.value,     end: dom.timeDayEnd.value },
-          evening: { start: dom.timeEveningStart.value, end: dom.timeEveningEnd.value },
-          night:   { start: dom.timeNightStart.value,   end: dom.timeNightEnd.value },
-          s:       { start: dom.timeSStart.value,       end: dom.timeSEnd.value },
-        }));
-      }
-
-      // 저장된 시간 불러와서 input에 세팅
-      (function initShiftTimes() {
-        const saved = loadShiftTimes();
-        dom.timeDayStart.value     = saved.day.start;
-        dom.timeDayEnd.value       = saved.day.end;
-        dom.timeEveningStart.value = saved.evening.start;
-        dom.timeEveningEnd.value   = saved.evening.end;
-        dom.timeNightStart.value   = saved.night.start;
-        dom.timeNightEnd.value     = saved.night.end;
-        dom.timeSStart.value       = saved.s.start;
-        dom.timeSEnd.value         = saved.s.end;
-      })();
-
-      [dom.timeDayStart, dom.timeDayEnd,
-       dom.timeEveningStart, dom.timeEveningEnd,
-       dom.timeNightStart, dom.timeNightEnd,
-       dom.timeSStart, dom.timeSEnd
-      ].forEach(el => el.addEventListener("change", saveShiftTimes));
-
-      // 링크로 들어온 경우 자동 join
-      (function checkJoinParam() {
-        const code = new URLSearchParams(window.location.search).get("join");
-        if (!code) return;
-        history.replaceState(null, "", window.location.pathname);
-        dom.shareJoinInput.value = code.toUpperCase();
-        joinWithCode();
-      })();
-
-      function exportCalendar() {
-        const selectedId = dom.exportMemberSelect.value;
-        const member = state.members.find(m => m.id === selectedId) ?? activeMember();
-        if (!member) { setToast("팀원을 먼저 추가해 주세요."); return; }
-
-        const SHIFT_NAMES = { day: "Day 근무", evening: "Evening 근무", night: "Night 근무", s: "S 근무", annual: "연차" };
-        const times = loadShiftTimes();
-
-        const bucket = getBucket(member.id);
-        const entries = Object.entries(bucket).filter(([, shift]) => shift && shift !== "off");
-
-        if (entries.length === 0) {
-          dom.exportCalStatus.textContent = "내보낼 근무 일정이 없어요.";
-          return;
-        }
-
-        const stamp = new Date().toISOString().replace(/[-:.]/g, "").slice(0, 15) + "Z";
-
-        function fmtLocal(date) {
-          return `${date.getFullYear()}${String(date.getMonth()+1).padStart(2,"0")}${String(date.getDate()).padStart(2,"0")}T${String(date.getHours()).padStart(2,"0")}${String(date.getMinutes()).padStart(2,"0")}00`;
-        }
-
-        const events = entries.map(([dateStr, shift]) => {
-          const [y, m, d] = dateStr.split("-").map(Number);
-          const { start, end } = times[shift] ?? DEFAULT_SHIFT_TIMES[shift];
-          const [sh, sm] = start.split(":").map(Number);
-          const [eh, em] = end.split(":").map(Number);
-
-          const startDt = new Date(y, m - 1, d, sh, sm);
-          // 종료 시간이 시작보다 작으면 야간처럼 다음날로 넘어가는 케이스
-          const crossesMidnight = (eh * 60 + em) <= (sh * 60 + sm);
-          const endDt = new Date(y, m - 1, d + (crossesMidnight ? 1 : 0), eh, em);
-
-          const uid = `${dateStr}-${shift}-${member.id}@nurse-shift-board`;
-          return [
-            "BEGIN:VEVENT",
-            `UID:${uid}`,
-            `DTSTAMP:${stamp}`,
-            `DTSTART;TZID=Asia/Seoul:${fmtLocal(startDt)}`,
-            `DTEND;TZID=Asia/Seoul:${fmtLocal(endDt)}`,
-            `SUMMARY:${SHIFT_NAMES[shift] ?? shift}`,
-            "END:VEVENT",
-          ].join("\r\n");
-        });
-
-        const ics = [
-          "BEGIN:VCALENDAR",
-          "VERSION:2.0",
-          "PRODID:-//Nurse Couple//KR",
-          "CALSCALE:GREGORIAN",
-          "METHOD:PUBLISH",
-          `X-WR-CALNAME:듀티 - ${member.name}`,
-          "X-WR-TIMEZONE:Asia/Seoul",
-          ...events,
-          "END:VCALENDAR",
-        ].join("\r\n");
-
-        const blob = new Blob([ics], { type: "text/calendar;charset=utf-8" });
-        const fileName = `duty-${member.name}.ics`;
-        const file = new File([blob], fileName, { type: "text/calendar" });
-
-        const ua = navigator.userAgent;
-        const isIos = /iphone|ipad|ipod/i.test(ua);
-        const isIosSafari = isIos && /Version\//i.test(ua) &&
-          !/KAKAOTALK|Instagram|NAVER|CriOS|FxiOS|OPiOS|EdgiOS/i.test(ua);
-
-        if (isIosSafari) {
-          // iOS Safari: data URI로 캘린더 앱 직접 오픈
-          const dataUri = "data:text/calendar;charset=utf-8," + encodeURIComponent(ics);
-          window.location.href = dataUri;
-          dom.exportCalStatus.textContent = `근무일 ${entries.length}개 · 캘린더에 추가해 주세요.`;
-          setToast("캘린더 앱이 열려요!");
-        } else if (navigator.canShare && navigator.canShare({ files: [file] })) {
-          // Android Chrome 등 — Web Share API
-          navigator.share({ files: [file], title: `듀티 - ${member.name}` })
-            .then(() => {
-              dom.exportCalStatus.textContent = `근무일 ${entries.length}개를 공유했어요.`;
-              setToast("캘린더 파일을 공유했어요!");
-            })
-            .catch((err) => {
-              if (err.name !== "AbortError") fallbackDownload();
-            });
-        } else {
-          fallbackDownload();
-        }
-
-        function fallbackDownload() {
-          const url = URL.createObjectURL(blob);
-          const a = document.createElement("a");
-          a.href = url;
-          a.download = fileName;
-          a.click();
-          URL.revokeObjectURL(url);
-          dom.exportCalStatus.textContent = `근무일 ${entries.length}개를 저장했어요.`;
-          setToast("캘린더 파일을 저장했어요!");
-        }
-      }
-
-      function shareUrl(code) {
-        return `${window.location.origin}${window.location.pathname}?join=${code}`;
-      }
-
-      function copyToClipboard(text, successMsg) {
-        navigator.clipboard.writeText(text).then(() => {
-          setToast(successMsg);
-        }).catch(() => {
-          setToast(text);
-        });
-      }
-
-      async function shareNative() {
-        const code = dom.shareCodeText.textContent;
-        if (!code) return;
-        const url = shareUrl(code);
-        const shareData = {
-          title: "듀티 달력 공유",
-          text: `${dom.shareCodeText.closest(".card") ? activeMember()?.name ?? "" : ""}의 듀티를 같이 확인해요!`,
-          url,
-        };
-        if (navigator.share && navigator.canShare?.(shareData)) {
-          try {
-            await navigator.share(shareData);
-          } catch (err) {
-            if (err.name !== "AbortError") copyToClipboard(url, "링크를 복사했어요!");
-          }
-        } else {
-          copyToClipboard(url, "링크를 복사했어요! (이 브라우저는 공유 시트 미지원)");
-        }
-      }
-
-      const SHARE_CODES_KEY = "nurse-shift-board:share-codes";
-      function loadShareCodes() {
-        try { return JSON.parse(storage.getItem(SHARE_CODES_KEY) ?? "{}"); } catch { return {}; }
-      }
-      function saveShareCode(memberId, code) {
-        try {
-          const codes = loadShareCodes();
-          codes[memberId] = code;
-          storage.setItem(SHARE_CODES_KEY, JSON.stringify(codes));
-        } catch {}
-      }
-
-      async function createShareCode() {
-        const selectedId = dom.shareMemberSelect.value;
-        const member = state.members.find(m => m.id === selectedId) ?? activeMember();
-        if (!member) { setToast("팀원을 먼저 추가해 주세요."); return; }
-        const shifts = getBucket(member.id);
-        if (Object.keys(shifts).length === 0) { setToast("듀티를 먼저 입력해 주세요."); return; }
-
-        const existingCode = loadShareCodes()[member.id] ?? "";
-
-        dom.shareCreateBtn.disabled = true;
-        dom.shareStatus.textContent = "링크 생성 중...";
-        dom.shareCodeWrap.style.display = "none";
-
-        try {
-          const res = await fetch("/api/share", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ row_index: state.members.indexOf(member) + 1, shifts, code: existingCode }),
-          });
-          const data = await res.json();
-          if (!res.ok) { dom.shareStatus.textContent = data.error ?? "오류가 발생했어요."; return; }
-          saveShareCode(member.id, data.code);
-          dom.shareCodeText.textContent = data.code;
-          dom.shareCodeWrap.style.display = "";
-          dom.shareStatus.textContent = existingCode
-            ? "듀티가 업데이트됐어요. 기존 링크로 바로 확인 가능해요!"
-            : "아래 버튼으로 카카오톡·문자로 바로 공유하세요!";
-          setToast(existingCode ? "듀티 업데이트 완료!" : "링크 생성 완료!");
-        } catch {
-          dom.shareStatus.textContent = "네트워크 오류가 발생했어요.";
-        } finally {
-          dom.shareCreateBtn.disabled = false;
-        }
-      }
-
-      async function joinWithCode() {
-        const code = dom.shareJoinInput.value.trim().toUpperCase();
-        if (!code) return;
-
-        dom.shareJoinBtn.disabled = true;
-        dom.shareStatus.textContent = "불러오는 중...";
-
-        try {
-          const res = await fetch(`/api/share?code=${encodeURIComponent(code)}`);
-          const data = await res.json();
-          if (!res.ok) { dom.shareStatus.textContent = data.error ?? "오류가 발생했어요."; return; }
-
-          const partnerShifts = data.shifts;
-
-          // 이름 없이 슬롯에 듀티만 적용 (이름은 로컬에서 관리)
-          // 이미 "상대방" 슬롯이 있으면 재사용 (activeMemberId와 무관하게)
-          let partner = state.members.find((m) => m.name === "상대방")
-                     ?? state.members.find((m) => m.id !== state.activeMemberId);
-          if (!partner && state.members.length < MAX_MEMBERS) {
-            partner = { id: crypto.randomUUID(), name: "상대방" };
-            state.members.push(partner);
-          }
-          if (partner) {
-            state.shiftsByMember[partner.id] = partnerShifts;
-          }
-
-          dom.shareJoinInput.value = "";
-          dom.shareStatus.textContent = "상대방의 듀티를 가져왔어요!";
-          renderAll();
-          setToast("상대방의 듀티를 불러왔어요.");
-        } catch {
-          dom.shareStatus.textContent = "네트워크 오류가 발생했어요.";
-        } finally {
-          dom.shareJoinBtn.disabled = false;
-        }
-      }
-
-      async function compressImage(file, maxPx = 2400, quality = 0.88) {
-        return new Promise((resolve) => {
-          const img = new Image();
-          const url = URL.createObjectURL(file);
-          img.onload = () => {
-            URL.revokeObjectURL(url);
-            let { width, height } = img;
-            if (width > maxPx || height > maxPx) {
-              if (width > height) { height = Math.round(height * maxPx / width); width = maxPx; }
-              else { width = Math.round(width * maxPx / height); height = maxPx; }
-            }
-            const canvas = document.createElement("canvas");
-            canvas.width = width; canvas.height = height;
-            canvas.getContext("2d").drawImage(img, 0, 0, width, height);
-            canvas.toBlob((blob) => resolve(blob ?? file), "image/jpeg", quality);
-          };
-          img.onerror = () => { URL.revokeObjectURL(url); resolve(file); };
-          img.src = url;
-        });
-      }
-
-      let _ocrAllRows = null;
-
-      async function _streamOcr(formData) {
-        const res = await fetch("/api/parse-duty", { method: "POST", body: formData });
-        if (!res.ok || !res.body) {
-          const data = await res.json().catch(() => ({}));
-          throw new Error(data.error ?? res.status);
-        }
-        const reader = res.body.getReader();
-        const decoder = new TextDecoder();
-        let buffer = "";
-        outer: while (true) {
-          const { done, value } = await reader.read();
-          if (done) break;
-          buffer += decoder.decode(value, { stream: true });
-          const lines = buffer.split("\n");
-          buffer = lines.pop() ?? "";
-          for (const line of lines) {
-            if (!line.startsWith("data: ")) continue;
-            let event;
-            try { event = JSON.parse(line.slice(6)); } catch { continue; }
-            if (event.type === "progress") {
-              const pct = Object.entries(OCR_PROGRESS_MAP).find(([k]) => event.message.includes(k))?.[1] ?? null;
-              if (event.message.includes("거의 다")) nearlyDone = true;
-              setOcrProgress(pct ?? parseInt(dom.ocrProgressBar.style.width) ?? 10, event.message);
-            } else if (event.type === "result") {
-              return event.data;
-            } else if (event.type === "error") {
-              throw new Error(event.message);
-            }
-          }
-        }
-        throw new Error("결과를 읽지 못했어요.");
-      }
-
-      const OCR_PROGRESS_MAP = {
-        "근무표 읽는 중": 30,
-        "AI가 듀티 보는 중": 60,
-        "꼼꼼히 확인 중": 80,
-        "거의 다 됐어요": 95,
-      };
-
-      function setOcrProgress(pct, msg) {
-        dom.ocrProgressBar.style.width = pct + "%";
-        if (msg) dom.ocrStatus.textContent = msg;
-      }
-
-      async function recognizeOcr() {
-        const file = dom.ocrFileInput.files[0];
-        if (!file) return;
-
-        dom.ocrRecognizeBtn.disabled = true;
-        dom.ocrImportBtn.disabled = true;
-        _ocrAllRows = null;
-
-        // 진행 바 표시
-        dom.ocrProgressWrap.style.display = "";
-        dom.ocrStatusStatic.textContent = "";
-        setOcrProgress(5, "사진 준비 중...");
-
-        // 남은 시간 타이머 (40초 기준)
-        const TOTAL_SEC = 40;
-        const startTime = Date.now();
-        let nearlyDone = false;
-        const elapsedTimer = setInterval(() => {
-          if (nearlyDone) { dom.ocrElapsed.textContent = "곧 완료..."; return; }
-          const elapsed = Math.floor((Date.now() - startTime) / 1000);
-          const remaining = Math.max(1, TOTAL_SEC - elapsed);
-          dom.ocrElapsed.textContent = `약 ${remaining}초 남음`;
-        }, 1000);
-
-        try {
-          const compressed = await compressImage(file);
-          const sizeMB = (compressed.size / 1024 / 1024).toFixed(1);
-          setOcrProgress(10, `근무표 분석 시작 (${sizeMB}MB)`);
-
-          const formData = new FormData();
-          formData.append("file", compressed, file.name);
-          formData.append("year", dom.ocrYearSelect.value);
-          formData.append("month", dom.ocrMonthSelect.value);
-
-          const result = await _streamOcr(formData);
-          const rows = result.rows ?? [];
-          if (!rows.length) {
-            dom.ocrProgressWrap.style.display = "none";
-            dom.ocrStatusStatic.textContent = "행을 인식하지 못했어요.";
-            return;
-          }
-
-          _ocrAllRows = result;
-
-          // 드롭다운에 이름 채우기
-          const sel = dom.ocrRowSelect;
-          sel.innerHTML = rows.map(row =>
-            `<option value="${row.rowIndex}">${row.rowIndex}번${row.name ? " · " + row.name : ""}</option>`
-          ).join("");
-          const savedRow = loadOcrPrefs().row ?? String(rows[0]?.rowIndex ?? "");
-          if ([...sel.options].some(o => o.value === savedRow)) sel.value = savedRow;
-          dom.ocrRowWrap.style.display = "";
-
-          dom.ocrImportBtn.disabled = false;
-          setOcrProgress(100, "완료!");
-          setTimeout(() => { dom.ocrProgressWrap.style.display = "none"; }, 600);
-          dom.ocrStatusStatic.textContent = `${result.year}년 ${result.month}월 · ${rows.length}명 인식 완료. 이름을 선택 후 가져오기를 누르세요.`;
-        } catch (e) {
-          dom.ocrProgressWrap.style.display = "none";
-          dom.ocrStatusStatic.textContent = `오류: ${e.message}`;
-        } finally {
-          clearInterval(elapsedTimer);
-          dom.ocrElapsed.textContent = "";
-          dom.ocrRecognizeBtn.disabled = !dom.ocrFileInput.files[0];
-        }
-      }
-
-      async function importFromOcr() {
-        const member = activeMember();
-        if (!member) { setToast("팀원을 먼저 추가해 주세요."); return; }
-        if (!_ocrAllRows) { setToast("인식하기를 먼저 눌러주세요."); return; }
-
-        const selectedIndex = parseInt(dom.ocrRowSelect.value, 10);
-        const row = _ocrAllRows.rows?.find(r => r.rowIndex === selectedIndex);
-        if (!row) { dom.ocrStatus.textContent = "선택한 행을 찾지 못했어요."; return; }
-
-        const { year, month } = _ocrAllRows;
-        const daysInMonth = new Date(year, month, 0).getDate();
-        let applied = 0;
-        row.shifts.forEach((shift, index) => {
-          if (!shift) return;
-          const mapped = OCR_TO_SHIFT[shift] ?? null;
-          if (!mapped) return;
-          const day = index + 1;
-          if (day > daysInMonth) return;
-          setShift(member.id, isoDate(new Date(year, month - 1, day)), mapped);
-          applied++;
-        });
-
-        state.currentYear = year;
-        state.currentMonth = month - 1;
-        renderAll();
-        const label = row.name || `${row.rowIndex}번`;
-        setToast(`${year}년 ${month}월 · ${label} 듀티 ${applied}일 가져왔어요.`);
-        dom.ocrStatus.textContent = `${year}년 ${month}월 · ${applied}일 반영 완료 (인식 ${row.recognizedDays}일)`;
-        dom.ocrFileInput.value = "";
-        dom.ocrFileName.textContent = "";
-      }
-
-      function renderAll() {
-        saveState();
-        renderTeam();
-        renderCalendar();
-        renderSelected();
-        renderStats();
-        updateStatus();
-      }
-
-      function startAutoRefresh() {
-        window.setInterval(() => {
-          const today = isoDate(new Date());
-          if (today === lastSeenDate) return;
-
-          lastSeenDate = today;
-          setSelectedDate(today);
-
-          setToast("새 날짜로 갱신했어요.");
-          renderAll();
-        }, 60 * 1000);
-      }
-
-      function renderWeekdays() {
-        dom.weekdayGrid.innerHTML = '<div></div>' + WEEKDAYS.map((day) => `<div class="weekday">${day}</div>`).join("");
-      }
-
-      function renderTeam() {
-        const html = state.members.map((member) => {
-          const active = member.id === state.activeMemberId;
-          const count = countShifts(member.id);
-          return `
-            <div class="member-row">
-              <button class="member ${active ? "is-active" : ""}" data-member-id="${member.id}">
-                <span>${escapeHtml(member.name)}</span>
-                <small>${count} shifts</small>
-              </button>
-              <button class="member-delete" data-delete-member-id="${member.id}" aria-label="${escapeHtml(member.name)} 삭제">×</button>
-            </div>
-          `;
-        });
-        dom.teamList.innerHTML = html.join("") || '<div class="empty">아직 팀원이 없어요.</div>';
-
-        // 공유 팀원 드롭다운 동기화
-        const prev = dom.shareMemberSelect.value;
-        dom.shareMemberSelect.innerHTML = state.members.map(m =>
-          `<option value="${m.id}">${escapeHtml(m.name)}</option>`
-        ).join("") || '<option value="">팀원 없음</option>';
-        if (state.members.some(m => m.id === prev)) dom.shareMemberSelect.value = prev;
-
-        // 내보내기 팀원 드롭다운 동기화
-        const prevExp = dom.exportMemberSelect.value;
-        dom.exportMemberSelect.innerHTML = state.members.map(m =>
-          `<option value="${m.id}">${escapeHtml(m.name)}</option>`
-        ).join("") || '<option value="">팀원 없음</option>';
-        if (state.members.some(m => m.id === prevExp)) dom.exportMemberSelect.value = prevExp;
-
-        dom.teamList.querySelectorAll("[data-member-id]").forEach((button) => {
-          button.addEventListener("click", () => {
-            state.activeMemberId = button.dataset.memberId;
-            renderAll();
-          });
-        });
-
-        dom.teamList.querySelectorAll("[data-delete-member-id]").forEach((button) => {
-          button.addEventListener("click", (event) => {
-            event.stopPropagation();
-            deleteMember(button.dataset.deleteMemberId);
-          });
-        });
-      }
-
-      function renderCalendar() {
-        const members = visibleMembers();
-        if (!members.length) {
-          dom.monthLabel.textContent = "팀원이 없어요";
-          dom.dayGrid.innerHTML = `<div class="calendar-empty">팀원을 추가한 뒤 시작해 주세요.</div>`;
-          return;
-        }
-
-        const { year, month } = getVisibleMonth();
-        const firstOfMonth = new Date(year, month, 1);
-        const startDay = firstOfMonth.getDay();
-        const daysInMonth = new Date(year, month + 1, 0).getDate();
-        const totalCells = Math.ceil((startDay + daysInMonth) / 7) * 7;
-        const weeks = totalCells / 7;
-        const todayIso = isoDate(new Date());
-        const memberColors = ["cal-name-m1", "cal-name-m2"];
-
-        dom.monthLabel.textContent = firstOfMonth.toLocaleDateString("ko-KR", { year: "numeric", month: "long" });
-
-        let html = "";
-        for (let w = 0; w < weeks; w++) {
-          html += '<div class="cal-week">';
-
-          // 날짜 숫자 행
-          html += '<div class="cal-num-row"><div></div>';
-          for (let d = 0; d < 7; d++) {
-            const dayNumber = w * 7 + d - startDay + 1;
-            const inMonth = dayNumber >= 1 && dayNumber <= daysInMonth;
-            const iso = inMonth ? isoDate(new Date(year, month, dayNumber)) : null;
-            const isToday = iso === todayIso;
-            html += `<div class="cal-num${isToday ? " is-today" : ""}">${inMonth ? dayNumber : ""}</div>`;
-          }
-          html += "</div>";
-
-          // 뱃지 행
-          html += '<div class="cal-badge-row">';
-          // 이름 레이블
-          html += '<div class="cal-name-stack">';
-          members.forEach((member, i) => {
-            html += `<span class="${memberColors[i] || "cal-name-m2"}">${escapeHtml(member.name)}</span>`;
-          });
-          html += "</div>";
-
-          // 날짜 셀
-          for (let d = 0; d < 7; d++) {
-            const dayNumber = w * 7 + d - startDay + 1;
-            const inMonth = dayNumber >= 1 && dayNumber <= daysInMonth;
-            if (!inMonth) {
-              html += '<div class="cal-day is-empty"></div>';
-              continue;
-            }
-            const iso = isoDate(new Date(year, month, dayNumber));
-            const isSelected = state.selectedDate === iso;
-            const isToday = iso === todayIso;
-            const badges = members.map((member) => {
-              const shift = getShift(member.id, iso);
-              return shift ? `<div class="day-badge ${SHIFT_CLASS[shift]}">${SHIFT_LABELS[shift]}</div>` : "";
-            }).join("");
-            const allOff = members.length > 1 && members.every((m) => getShift(m.id, iso) === "off");
-            html += `<button class="cal-day${isSelected ? " is-selected" : ""}${isToday ? " is-today" : ""}${allOff ? " is-common-off" : ""}" data-date="${iso}">${badges}</button>`;
-          }
-          html += "</div></div>";
-        }
-
-        dom.dayGrid.innerHTML = html;
-        dom.dayGrid.querySelectorAll("[data-date]").forEach((button) => {
-          button.addEventListener("click", () => {
-            setSelectedDate(button.dataset.date);
-            renderAll();
-            setToast("시작 날짜를 선택했어요.");
-          });
-        });
-      }
-
-      function renderSelected() {
-        const member = activeMember();
-        if (!member) {
-          dom.selectedLabel.textContent = "팀원을 추가해 주세요";
-          dom.shiftButtons.innerHTML = renderShiftButtons();
-          dom.shiftButtons.querySelectorAll("[data-shift]").forEach((button) => {
-            button.addEventListener("click", () => {
-              setToast("먼저 팀원을 추가해 주세요.");
-            });
-          });
-          return;
-        }
-
-        const dateLabel = state.selectedDate ? formatFullDate(state.selectedDate) : "날짜를 선택해 주세요";
-        dom.selectedLabel.textContent = state.selectedDate
-          ? `${member.name} · 시작 날짜 ${dateLabel}`
-          : `${member.name} · 시작 날짜를 선택해 주세요`;
-        dom.shiftButtons.innerHTML = renderShiftButtons();
-        dom.shiftButtons.querySelectorAll("[data-shift]").forEach((button) => {
-          button.addEventListener("click", () => {
-            const targetDate = state.selectedDate ?? isoDate(new Date());
-            setShift(member.id, targetDate, button.dataset.shift);
-            setSelectedDate(addDays(targetDate, 1));
-            renderAll();
-            setToast(`${SHIFT_LABELS[button.dataset.shift]}를 순차 입력했어요.`);
-          });
-        });
-      }
-
-      function renderStats() {
-        const members = visibleMembers();
-        if (!members.length) {
-          dom.stats.innerHTML = '<div class="empty" style="grid-column:1/-1">팀원을 추가하면 통계가 보입니다.</div>';
-          return;
-        }
-        const stats = members.map((member) => {
-          const shiftSummary = SHIFT_ORDER.map((shift) => `${SHIFT_LABELS[shift]} ${countShifts(member.id, shift)}`).join(" · ");
-          const total = countShifts(member.id);
-          return `
-            <div class="stat">
-              <strong>${total}</strong>
-              <span>${escapeHtml(member.name)}</span>
-              <small>${escapeHtml(shiftSummary)}</small>
-            </div>
-          `;
-        });
-        dom.stats.innerHTML = stats.join("");
-      }
-
-      function clearAllShifts() {
-        const member = activeMember();
-        if (!member) {
-          setToast("팀원을 먼저 추가해 주세요.");
-          return;
-        }
-        const confirmed = window.confirm(`${member.name}의 모든 듀티를 삭제할까요?`);
-        if (!confirmed) return;
-
-        state.shiftsByMember[member.id] = {};
-        renderAll();
-        setToast("모든 듀티를 삭제했어요.");
-      }
-
-      function renderShiftButtons() {
-        return SHIFT_ORDER.map((shift) => `
-          <button class="shift-btn" data-shift="${shift}">
-            ${SHIFT_LABELS[shift]}
-          </button>
-        `).join("");
-      }
-
-      function addMember() {
-        if (state.members.length >= MAX_MEMBERS) {
-          setToast("일단은 두 사람까지만 볼 수 있어요.");
-          return;
-        }
-        const name = dom.memberName.value.trim();
-        if (!name) return;
-        const member = { id: crypto.randomUUID(), name };
-        state.members.push(member);
-        state.activeMemberId = member.id;
-        dom.memberName.value = "";
-        renderAll();
-      }
-
-      function deleteMember(memberId) {
-        const member = state.members.find((item) => item.id === memberId);
-        if (!member) return;
-        const confirmed = window.confirm(`${member.name} 팀을 지울까요? 이 사람의 듀티도 같이 삭제됩니다.`);
-        if (!confirmed) return;
-
-        state.members = state.members.filter((item) => item.id !== memberId);
-        delete state.shiftsByMember[memberId];
-
-        if (state.activeMemberId === memberId) {
-          state.activeMemberId = state.members[0]?.id ?? null;
-        }
-
-        if (state.members.length === 0) {
-          state.selectedDate = null;
-        }
-
-        renderAll();
-        setToast("팀을 삭제했어요.");
-      }
-
-      function shiftMonth(delta) {
-        const next = new Date(state.currentYear, state.currentMonth + delta, 1);
-        state.currentYear = next.getFullYear();
-        state.currentMonth = next.getMonth();
-        renderAll();
-      }
-
-      function goToToday() {
-        const today = new Date();
-        setSelectedDate(isoDate(today));
-        renderAll();
-      }
-
-      function updateStatus() {
-        // statusPill removed
-      }
-
-      function setShift(memberId, date, shift) {
-        if (!memberId || !date) return;
-        const bucket = getBucket(memberId);
-        bucket[date] = shift;
-      }
-
-      function getShift(memberId, date) {
-        return getBucket(memberId)[date] ?? null;
-      }
-
-      function getBucket(memberId) {
-        if (!state.shiftsByMember[memberId]) {
-          state.shiftsByMember[memberId] = {};
-        }
-        return state.shiftsByMember[memberId];
-      }
-
-      function countShifts(memberId, shift) {
-        const bucket = getBucket(memberId);
-        const values = Object.values(bucket);
-        if (!shift) return values.length;
-        return values.filter((value) => value === shift).length;
-      }
-
-      function activeMember() {
-        return state.members.find((member) => member.id === state.activeMemberId) ?? state.members[0] ?? null;
-      }
-
-      function visibleMembers() {
-        return state.members.slice(0, MAX_MEMBERS);
-      }
-
-      function getVisibleMonth() {
-        return { year: state.currentYear, month: state.currentMonth };
-      }
-
-      function formatVisibleMonth() {
-        const { year, month } = getVisibleMonth();
-        return new Date(year, month, 1).toLocaleDateString("en-US", { month: "short" });
-      }
-
-      function formatFullDate(date) {
-        return new Date(date).toLocaleDateString("ko-KR", {
-          year: "numeric",
-          month: "long",
-          day: "numeric",
-          weekday: "long",
-        });
-      }
-
-      function isoDate(date) {
-        const value = new Date(date);
-        const year = value.getFullYear();
-        const month = String(value.getMonth() + 1).padStart(2, "0");
-        const day = String(value.getDate()).padStart(2, "0");
-        return `${year}-${month}-${day}`;
-      }
-
-      function addDays(date, delta) {
-        const value = new Date(date);
-        value.setDate(value.getDate() + delta);
-        return isoDate(value);
-      }
-
-      function setSelectedDate(date) {
-        state.selectedDate = date;
-        syncVisibleMonthToSelection();
-      }
-
-      function syncVisibleMonthToSelection() {
-        if (!state.selectedDate) return;
-        const selected = parseIsoDate(state.selectedDate);
-        if (!selected) return;
-        state.currentYear = selected.getFullYear();
-        state.currentMonth = selected.getMonth();
-      }
-
-      function normalizeState(candidate) {
-        const fallback = {
-          members: [],
-          activeMemberId: null,
-          currentMonth: now.getMonth(),
-          currentYear: now.getFullYear(),
-          selectedDate: isoDate(new Date(now.getFullYear(), now.getMonth(), now.getDate())),
-          shiftsByMember: {},
-        };
-        const next = { ...fallback, ...(candidate && typeof candidate === "object" ? candidate : {}) };
-        next.members = Array.isArray(next.members)
-          ? next.members
-              .filter((member) => member && typeof member === "object" && typeof member.name === "string")
-              .map((member) => ({
-                id: typeof member.id === "string" && member.id ? member.id : crypto.randomUUID(),
-                name: member.name.trim() || "이름 없음",
-              }))
-              .slice(0, MAX_MEMBERS)
-          : [];
-        next.shiftsByMember = isPlainObject(next.shiftsByMember) ? next.shiftsByMember : {};
-        next.currentMonth = clampMonth(next.currentMonth);
-        next.currentYear = clampYear(next.currentYear);
-        if (next.selectedDate && !parseIsoDate(next.selectedDate)) {
-          next.selectedDate = null;
-        }
-        if (next.activeMemberId && !next.members.some((member) => member.id === next.activeMemberId)) {
-          next.activeMemberId = next.members[0]?.id ?? null;
-        }
-        return next;
-      }
-
-      function saveState() {
-        try {
-          storage.setItem(STORAGE_KEY, JSON.stringify(state));
-        } catch {
-          // Fallback to in-memory only when the browser blocks storage on file://.
-        }
-      }
-
-      function loadState() {
-        let raw = null;
-        try {
-          raw = storage.getItem(STORAGE_KEY);
-        } catch {
-          return null;
-        }
-        if (!raw) return null;
-        try {
-          return JSON.parse(raw);
-        } catch {
-          return null;
-        }
-      }
-
-      function parseIsoDate(dateString) {
-        if (!/^\d{4}-\d{2}-\d{2}$/.test(dateString)) return null;
-        const parsed = new Date(`${dateString}T00:00:00`);
-        return Number.isNaN(parsed.getTime()) ? null : parsed;
-      }
-
-      function isPlainObject(value) {
-        return Boolean(value) && typeof value === "object" && !Array.isArray(value);
-      }
-
-      function clampMonth(value) {
-        const month = Number(value);
-        if (!Number.isFinite(month)) return now.getMonth();
-        return Math.min(11, Math.max(0, Math.trunc(month)));
-      }
-
-      function clampYear(value) {
-        const year = Number(value);
-        if (!Number.isFinite(year)) return now.getFullYear();
-        return Math.min(9999, Math.max(1900, Math.trunc(year)));
-      }
-
-      function setToast(message) {
-        dom.toast.textContent = message;
-        dom.toast.classList.add("visible");
-        window.clearTimeout(setToast._timer);
-        setToast._timer = window.setTimeout(() => {
-          dom.toast.classList.remove("visible");
-        }, 2200);
-      }
-
-      function createStorage() {
-        try {
-          const testKey = "__nurse_shift_board_test__";
-          window.localStorage.setItem(testKey, "1");
-          window.localStorage.removeItem(testKey);
-          return window.localStorage;
-        } catch {
-          const memory = new Map();
-          return {
-            getItem(key) {
-              return memory.has(key) ? memory.get(key) : null;
-            },
-            setItem(key, value) {
-              memory.set(key, String(value));
-            },
-            removeItem(key) {
-              memory.delete(key);
-            },
-          };
-        }
-      }
-
-      function escapeHtml(value) {
-        return value
-          .replaceAll("&", "&amp;")
-          .replaceAll("<", "&lt;")
-          .replaceAll(">", "&gt;")
-          .replaceAll('"', "&quot;")
-          .replaceAll("'", "&#39;");
-      }
-
-      if ("serviceWorker" in navigator) {
-        navigator.serviceWorker.register("/sw.js").catch(() => {});
-      }
-
-      // ── PWA 설치 안내 ──────────────────────────────────────────────
-      (function initInstall() {
-        const card = dom.installCard;
-        const instructions = dom.installInstructions;
-        const btn = dom.installPwaBtn;
-
-        const ua = navigator.userAgent;
-        const isIos = /iphone|ipad|ipod/i.test(ua);
-        // 인앱 브라우저 + 비-Safari 브라우저 목록
-        const isIosNonSafari = isIos && /KAKAOTALK|Instagram|NAVER|CriOS|FxiOS|OPiOS|EdgiOS/i.test(ua);
-        // 진짜 Safari: Version/ 포함 + 비-Safari 목록 없음
-        const isIosSafari = isIos && /Version\//i.test(ua) && !isIosNonSafari;
-        const isStandalone = window.matchMedia("(display-mode: standalone)").matches
-          || navigator.standalone === true;
-
-        if (isStandalone) return;
-
-        card.style.display = "";
-
-        if (isIosSafari) {
-          // iOS Safari: 단계별 시각 안내
-          instructions.innerHTML = `
-            <div class="install-steps">
-              <div class="install-step">
-                <span class="install-step-num">1</span>
-                <span>하단 <strong>공유</strong> 버튼 탭
-                  <span class="install-step-icon" style="margin-left:4px">
-                    <svg width="14" height="16" viewBox="0 0 14 16" fill="none" xmlns="http://www.w3.org/2000/svg">
-                      <path d="M7 1v9M3.5 4L7 1l3.5 3" stroke="#1c7c7a" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
-                      <path d="M1 8v6h12V8" stroke="#1c7c7a" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
-                    </svg>
-                  </span>
-                </span>
-              </div>
-              <div class="install-step">
-                <span class="install-step-num">2</span>
-                <span>스크롤 내려 <strong>"홈 화면에 추가"</strong> 선택</span>
-              </div>
-              <div class="install-step">
-                <span class="install-step-num">3</span>
-                <span>우측 상단 <strong>"추가"</strong> 탭</span>
-              </div>
-            </div>`;
-
-        } else if (isIosNonSafari) {
-          // iOS Chrome/Firefox 등: URL 복사 버튼으로 Safari 유도
-          instructions.innerHTML = `
-            <div style="line-height:1.6;margin-bottom:10px">
-              iOS는 <strong>Safari</strong>에서만 설치할 수 있어요.<br>
-              <span style="color:var(--muted);font-size:13px">아래 버튼으로 주소를 복사한 뒤 Safari에 붙여넣으세요.</span>
-            </div>`;
-          btn.textContent = "Safari용 주소 복사하기";
-          btn.style.display = "";
-          btn.addEventListener("click", async () => {
-            try {
-              await navigator.clipboard.writeText(location.href);
-              setToast("복사했어요! Safari를 열고 붙여넣으세요 🧭");
-              btn.textContent = "복사 완료 ✓";
-              btn.disabled = true;
-            } catch {
-              // clipboard API 실패 시 수동 복사 안내
-              prompt("주소를 복사해서 Safari에 붙여넣으세요:", location.href);
-            }
-          }, { once: true });
-
-        } else {
-          // Android / 데스크탑 Chrome 등
-          instructions.innerHTML =
-            `<div class="subtle" style="line-height:1.7;margin-bottom:2px">아래 버튼을 눌러 앱으로 설치하세요.</div>`;
-          if (_pwaInstallPrompt) btn.style.display = "";
-        }
-
-        window.addEventListener("beforeinstallprompt", () => {
-          if (!isIos) btn.style.display = "";
-        });
-
-        btn.addEventListener("click", async () => {
-          if (!_pwaInstallPrompt) return;
-          _pwaInstallPrompt.prompt();
-          const { outcome } = await _pwaInstallPrompt.userChoice;
-          if (outcome === "accepted") card.style.display = "none";
-          _pwaInstallPrompt = null;
-        });
-      })();
-
-      // ── 인앱 브라우저 감지 배너 ──────────────────────────────────────
-      (function initInAppBanner() {
-        const ua = navigator.userAgent;
-        const isIos = /iphone|ipad|ipod/i.test(ua);
-        const isStandalone = window.matchMedia("(display-mode: standalone)").matches
-          || navigator.standalone === true;
-
-        if (isStandalone) return;
-        if (!isIos) return;
-
-        // 인앱 브라우저 목록 — 이게 있으면 Safari가 아님
-        const isInApp = /KAKAOTALK|Instagram|NAVER|CriOS|FxiOS|OPiOS|EdgiOS/i.test(ua);
-        // 진짜 Safari: Version/ 포함 + 인앱 브라우저 아님
-        const isRealSafari = /Version\//i.test(ua) && !isInApp;
-        if (isRealSafari) return; // Safari 사용자는 설치 카드로 안내
-
-        const DISMISS_KEY = "inapp-banner-v1";
-        if (localStorage.getItem(DISMISS_KEY)) return;
-
-        const banner = document.getElementById("inappBanner");
-        const text = document.getElementById("inappBannerText");
-        const copyBtn = document.getElementById("inappCopyBtn");
-        const dismissBtn = document.getElementById("inappDismissBtn");
-
-        let msg;
-        if (/KAKAOTALK/i.test(ua)) {
-          msg = "앱으로 저장하려면 Safari로 여세요. 하단 ··· → 다른 브라우저로 열기";
-        } else if (/Instagram/i.test(ua)) {
-          msg = "앱으로 저장하려면 Safari로 여세요. 하단 ··· → Safari에서 열기";
-        } else if (/NAVER/i.test(ua)) {
-          msg = "앱으로 저장하려면 Safari로 여세요. 주소창 옆 ··· → 외부 브라우저로 열기";
-        } else {
-          msg = "앱으로 저장하려면 Safari에서 열어야 해요. 주소를 복사해 Safari에 붙여넣으세요.";
-        }
-
-        text.textContent = msg;
-        banner.style.display = "flex";
-
-        copyBtn.addEventListener("click", async () => {
-          try {
-            await navigator.clipboard.writeText(location.href);
-            copyBtn.textContent = "복사됨 ✓";
-            copyBtn.disabled = true;
-            setToast("Safari를 열고 붙여넣으세요 🧭");
-          } catch {
-            prompt("주소를 복사해서 Safari에 붙여넣으세요:", location.href);
-          }
-        });
-
-        dismissBtn.addEventListener("click", () => {
-          banner.style.display = "none";
-          localStorage.setItem(DISMISS_KEY, "1");
-        });
-      })();
-    </script>
-  </body>
+  </div>
+</body>
 </html>
