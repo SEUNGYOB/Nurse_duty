@@ -646,9 +646,11 @@
 
       /* 설정·가져오기 탭에서는 달력 숨기고 사이드패널만 표시 (모든 해상도) */
       .shell.tab-settings .main-content,
+      .shell.tab-export .main-content,
       .shell.tab-import .main-content { display: none; }
 
       .shell.tab-settings .side-panel,
+      .shell.tab-export .side-panel,
       .shell.tab-import .side-panel {
         grid-column: 1 / -1;
         max-width: 520px;
@@ -662,8 +664,9 @@
         /* 모바일: 사이드패널 항상 보임 (세로 스택) */
         .side-panel { display: grid; grid-column: 1 / -1; }
 
-        /* import·settings 탭에서는 달력 숨김 */
+        /* import·export·settings 탭에서는 달력 숨김 */
         .shell.tab-import .main-content,
+        .shell.tab-export .main-content,
         .shell.tab-settings .main-content { display: none; }
 
         .weekday-grid { gap: 6px; }
@@ -776,6 +779,10 @@
           <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
           가져오기
         </button>
+        <button class="rail-btn" data-tab="export">
+          <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+          내보내기
+        </button>
         <button class="rail-btn" data-tab="settings">
           <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
           설정
@@ -876,8 +883,8 @@
           </section>
           </div><!-- /pane import -->
 
-          <!-- 설정 패널: 공유 + 근무시간 + 캘린더 내보내기 -->
-          <div class="pane" data-pane="settings">
+          <!-- 내보내기 패널: 공유 + 캘린더 내보내기 -->
+          <div class="pane" data-pane="export">
           <section class="card">
             <div class="section-title">공유</div>
             <div class="empty" style="margin-bottom: 12px">내 듀티 링크를 만들어 카카오톡·문자로 보내세요. 상대방이 링크를 열면 자동으로 함께 볼 수 있어요.</div>
@@ -920,36 +927,40 @@
             </div>
             <button class="btn btn-primary" style="width:100%" id="exportCalBtn">📅 .ics 파일 저장</button>
             <div id="exportCalStatus" class="subtle ocr-hint" style="margin-top:8px"></div>
-            <details style="margin-top:14px">
-              <summary style="cursor:pointer;font:600 12px/1.4 system-ui,sans-serif;color:var(--muted);letter-spacing:.06em;text-transform:uppercase">근무 시간 수정</summary>
-              <div class="subtle" style="margin:8px 0 10px">병원마다 다른 시간을 한 번만 설정해 두세요.</div>
-              <div style="display:grid;gap:8px">
-                <div class="shift-time-row">
-                  <span class="shift-time-label badge-day">Day</span>
-                  <input type="time" id="timeDayStart" class="field shift-time-input" value="07:00">
-                  <span class="shift-time-sep">~</span>
-                  <input type="time" id="timeDayEnd" class="field shift-time-input" value="15:30">
-                </div>
-                <div class="shift-time-row">
-                  <span class="shift-time-label badge-evening">Eve</span>
-                  <input type="time" id="timeEveningStart" class="field shift-time-input" value="15:00">
-                  <span class="shift-time-sep">~</span>
-                  <input type="time" id="timeEveningEnd" class="field shift-time-input" value="23:30">
-                </div>
-                <div class="shift-time-row">
-                  <span class="shift-time-label badge-night">Night</span>
-                  <input type="time" id="timeNightStart" class="field shift-time-input" value="23:00">
-                  <span class="shift-time-sep">~</span>
-                  <input type="time" id="timeNightEnd" class="field shift-time-input" value="07:30">
-                </div>
-                <div class="shift-time-row">
-                  <span class="shift-time-label badge-s">S</span>
-                  <input type="time" id="timeSStart" class="field shift-time-input" value="08:00">
-                  <span class="shift-time-sep">~</span>
-                  <input type="time" id="timeSEnd" class="field shift-time-input" value="17:00">
-                </div>
+          </section>
+          </div><!-- /pane export -->
+
+          <!-- 설정 패널: 근무 시간 -->
+          <div class="pane" data-pane="settings">
+          <section class="card">
+            <div class="section-title">근무 시간 설정</div>
+            <div class="subtle" style="margin-bottom:12px">캘린더로 내보낼 때 사용할 시간이에요. 병원마다 다르니 한 번만 설정해 두세요.</div>
+            <div style="display:grid;gap:8px">
+              <div class="shift-time-row">
+                <span class="shift-time-label badge-day">Day</span>
+                <input type="time" id="timeDayStart" class="field shift-time-input" value="07:00">
+                <span class="shift-time-sep">~</span>
+                <input type="time" id="timeDayEnd" class="field shift-time-input" value="15:30">
               </div>
-            </details>
+              <div class="shift-time-row">
+                <span class="shift-time-label badge-evening">Eve</span>
+                <input type="time" id="timeEveningStart" class="field shift-time-input" value="15:00">
+                <span class="shift-time-sep">~</span>
+                <input type="time" id="timeEveningEnd" class="field shift-time-input" value="23:30">
+              </div>
+              <div class="shift-time-row">
+                <span class="shift-time-label badge-night">Night</span>
+                <input type="time" id="timeNightStart" class="field shift-time-input" value="23:00">
+                <span class="shift-time-sep">~</span>
+                <input type="time" id="timeNightEnd" class="field shift-time-input" value="07:30">
+              </div>
+              <div class="shift-time-row">
+                <span class="shift-time-label badge-s">S</span>
+                <input type="time" id="timeSStart" class="field shift-time-input" value="08:00">
+                <span class="shift-time-sep">~</span>
+                <input type="time" id="timeSEnd" class="field shift-time-input" value="17:00">
+              </div>
+            </div>
           </section>
           </div><!-- /pane settings -->
 
