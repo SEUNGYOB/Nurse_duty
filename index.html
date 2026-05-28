@@ -2158,17 +2158,25 @@
             </div>`;
 
         } else if (isIosNonSafari) {
-          // iOS Chrome/Firefox 등: Safari로 유도
+          // iOS Chrome/Firefox 등: URL 복사 버튼으로 Safari 유도
           instructions.innerHTML = `
-            <div class="install-warn">
-              <span style="font-size:18px">⚠️</span>
-              <div>
-                iOS에서는 <strong>Safari</strong>에서만 홈 화면에 추가할 수 있어요.<br>
-                <span style="color:var(--muted);font-size:12px;margin-top:4px;display:block">
-                  주소창의 URL을 복사 → Safari에서 붙여넣기 후 다시 시도해 주세요.
-                </span>
-              </div>
+            <div style="line-height:1.6;margin-bottom:10px">
+              iOS는 <strong>Safari</strong>에서만 설치할 수 있어요.<br>
+              <span style="color:var(--muted);font-size:13px">아래 버튼으로 주소를 복사한 뒤 Safari에 붙여넣으세요.</span>
             </div>`;
+          btn.textContent = "Safari용 주소 복사하기";
+          btn.style.display = "";
+          btn.addEventListener("click", async () => {
+            try {
+              await navigator.clipboard.writeText(location.href);
+              setToast("복사했어요! Safari를 열고 붙여넣으세요 🧭");
+              btn.textContent = "복사 완료 ✓";
+              btn.disabled = true;
+            } catch {
+              // clipboard API 실패 시 수동 복사 안내
+              prompt("주소를 복사해서 Safari에 붙여넣으세요:", location.href);
+            }
+          }, { once: true });
 
         } else {
           // Android / 데스크탑 Chrome 등
