@@ -644,6 +644,51 @@
         font: 500 14px/1.5 system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
       }
 
+      .install-steps {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        margin: 4px 0 2px;
+      }
+      .install-step {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        font: 500 14px/1.4 system-ui, -apple-system, sans-serif;
+        color: var(--ink);
+      }
+      .install-step-num {
+        flex-shrink: 0;
+        width: 24px;
+        height: 24px;
+        border-radius: 50%;
+        background: var(--accent);
+        color: #fff;
+        font: 700 12px/24px system-ui, sans-serif;
+        text-align: center;
+      }
+      .install-step-icon {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 26px;
+        height: 26px;
+        border-radius: 6px;
+        background: #e8f5f5;
+        flex-shrink: 0;
+      }
+      .install-warn {
+        display: flex;
+        align-items: flex-start;
+        gap: 10px;
+        padding: 12px 14px;
+        background: #fff8e8;
+        border: 1px solid #f5d97a;
+        border-radius: 14px;
+        font: 500 13px/1.5 system-ui, -apple-system, sans-serif;
+        color: #5a4200;
+      }
+
       /* 설정·가져오기 탭에서는 달력 숨기고 사이드패널만 표시 (모든 해상도) */
       .shell.tab-settings .main-content,
       .shell.tab-export .main-content,
@@ -1329,15 +1374,34 @@
         ].join("\r\n");
 
         const blob = new Blob([ics], { type: "text/calendar;charset=utf-8" });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement("a");
-        a.href = url;
-        a.download = `duty-${member.name}.ics`;
-        a.click();
-        URL.revokeObjectURL(url);
+        const fileName = `duty-${member.name}.ics`;
+        const file = new File([blob], fileName, { type: "text/calendar" });
 
-        dom.exportCalStatus.textContent = `근무일 ${entries.length}개를 저장했어요.`;
-        setToast("캘린더 파일을 저장했어요!");
+        if (navigator.canShare && navigator.canShare({ files: [file] })) {
+          // iOS Safari / Android Chrome — Web Share API로 캘린더 앱에 직접 전달
+          navigator.share({ files: [file], title: `듀티 - ${member.name}` })
+            .then(() => {
+              dom.exportCalStatus.textContent = `근무일 ${entries.length}개를 공유했어요.`;
+              setToast("캘린더 파일을 공유했어요!");
+            })
+            .catch((err) => {
+              if (err.name !== "AbortError") setToast("공유에 실패했어요. 파일로 저장할게요.");
+              fallbackDownload();
+            });
+        } else {
+          fallbackDownload();
+        }
+
+        function fallbackDownload() {
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement("a");
+          a.href = url;
+          a.download = fileName;
+          a.click();
+          URL.revokeObjectURL(url);
+          dom.exportCalStatus.textContent = `근무일 ${entries.length}개를 저장했어요.`;
+          setToast("캘린더 파일을 저장했어요!");
+        }
       }
 
       function shareUrl(code) {
@@ -2055,7 +2119,12 @@
         const card = dom.installCard;
         const instructions = dom.installInstructions;
         const btn = dom.installPwaBtn;
-        const isIos = /iphone|ipad|ipod/i.test(navigator.userAgent);
+
+        const ua = navigator.userAgent;
+        const isIos = /iphone|ipad|ipod/i.test(ua);
+        // CriOS=Chrome, FxiOS=Firefox, OPiOS=Opera — iOS에서 Safari가 아닌 브라우저
+        const isIosNonSafari = isIos && /crios|fxios|opios|EdgiOS/i.test(ua);
+        const isIosSafari = isIos && !isIosNonSafari;
         const isStandalone = window.matchMedia("(display-mode: standalone)").matches
           || navigator.standalone === true;
 
@@ -2063,21 +2132,51 @@
 
         card.style.display = "";
 
-        if (isIos) {
-          instructions.innerHTML =
-            `<div class="subtle" style="line-height:1.8">
-              ① Safari에서 이 페이지를 열어요<br>
-              ② 하단 <strong>공유(□↑)</strong> 버튼 탭<br>
-              ③ <strong>"홈 화면에 추가"</strong> 선택
+        if (isIosSafari) {
+          // iOS Safari: 단계별 시각 안내
+          instructions.innerHTML = `
+            <div class="install-steps">
+              <div class="install-step">
+                <span class="install-step-num">1</span>
+                <span>하단 <strong>공유</strong> 버튼 탭
+                  <span class="install-step-icon" style="margin-left:4px">
+                    <svg width="14" height="16" viewBox="0 0 14 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+                      <path d="M7 1v9M3.5 4L7 1l3.5 3" stroke="#1c7c7a" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+                      <path d="M1 8v6h12V8" stroke="#1c7c7a" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                  </span>
+                </span>
+              </div>
+              <div class="install-step">
+                <span class="install-step-num">2</span>
+                <span>스크롤 내려 <strong>"홈 화면에 추가"</strong> 선택</span>
+              </div>
+              <div class="install-step">
+                <span class="install-step-num">3</span>
+                <span>우측 상단 <strong>"추가"</strong> 탭</span>
+              </div>
             </div>`;
+
+        } else if (isIosNonSafari) {
+          // iOS Chrome/Firefox 등: Safari로 유도
+          instructions.innerHTML = `
+            <div class="install-warn">
+              <span style="font-size:18px">⚠️</span>
+              <div>
+                iOS에서는 <strong>Safari</strong>에서만 홈 화면에 추가할 수 있어요.<br>
+                <span style="color:var(--muted);font-size:12px;margin-top:4px;display:block">
+                  주소창의 URL을 복사 → Safari에서 붙여넣기 후 다시 시도해 주세요.
+                </span>
+              </div>
+            </div>`;
+
         } else {
+          // Android / 데스크탑 Chrome 등
           instructions.innerHTML =
-            `<div class="subtle" style="line-height:1.7">아래 버튼을 눌러 앱으로 설치하세요.</div>`;
-          // 이미 캡쳐된 경우 즉시 버튼 표시
+            `<div class="subtle" style="line-height:1.7;margin-bottom:2px">아래 버튼을 눌러 앱으로 설치하세요.</div>`;
           if (_pwaInstallPrompt) btn.style.display = "";
         }
 
-        // 나중에 이벤트가 캡쳐될 때도 버튼 표시
         window.addEventListener("beforeinstallprompt", () => {
           if (!isIos) btn.style.display = "";
         });
