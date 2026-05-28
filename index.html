@@ -53,11 +53,47 @@
         margin: 0 auto;
       }
 
+      .icon-rail {
+        display: flex;
+        flex-direction: row;
+        align-items: center;
+        gap: 4px;
+        padding: 6px 10px;
+        margin-bottom: 18px;
+      }
+
       .shell {
         display: grid;
-        grid-template-columns: 320px minmax(0, 1fr);
+        grid-template-columns: 300px minmax(0, 1fr);
         gap: 18px;
+        align-items: start;
       }
+
+      .rail-btn {
+        width: auto;
+        height: 44px;
+        padding: 0 16px;
+        border-radius: 14px;
+        border: none;
+        background: transparent;
+        cursor: pointer;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 4px;
+        color: var(--muted);
+        font: 700 9px/1 system-ui, sans-serif;
+        text-transform: uppercase;
+        letter-spacing: .04em;
+        transition: background 0.15s, color 0.15s;
+      }
+      .rail-btn svg { width: 20px; height: 20px; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+      .rail-btn:hover { background: rgba(28,124,122,0.1); color: var(--accent); }
+      .rail-btn.is-active { background: var(--accent); color: #fff; }
+
+      .pane { display: none; }
+      .pane.is-active { display: contents; }
 
       .hero {
         grid-column: 1 / -1;
@@ -461,7 +497,26 @@
       .badge-evening { background: var(--evening); }
       .badge-night { background: var(--night); }
       .badge-s { background: #2a9d5c; }
+      .badge-annual { background: #7c5cbf; }
       .badge-off { background: var(--off); color: #25303a; }
+
+      .shift-time-row {
+        display: grid;
+        grid-template-columns: 52px 1fr 10px 1fr;
+        gap: 6px;
+        align-items: center;
+      }
+      .shift-time-label {
+        padding: 4px 0;
+        border-radius: 8px;
+        font: 700 11px/1 system-ui, sans-serif;
+        text-align: center;
+        color: #fff;
+        letter-spacing: .04em;
+      }
+      .shift-time-label.badge-day { color: #2f250f; }
+      .shift-time-sep { text-align: center; color: var(--muted); font-size: 13px; }
+      .shift-time-input { padding: 8px 10px; font-size: 13px; }
 
       .calendar-note {
         margin-top: auto;
@@ -514,6 +569,7 @@
       .shift-btn[data-shift="evening"] { color: #a93e29; }
       .shift-btn[data-shift="night"]   { color: #244460; }
       .shift-btn[data-shift="s"]       { color: #1a6b3c; }
+      .shift-btn[data-shift="annual"]  { color: #4e3480; }
       .shift-btn[data-shift="off"]     { color: #5c6974; }
 
       .stats {
@@ -588,14 +644,47 @@
         font: 500 14px/1.5 system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
       }
 
+      /* 설정·가져오기 탭에서는 달력 숨기고 사이드패널만 표시 (모든 해상도) */
+      .shell.tab-settings .main-content,
+      .shell.tab-import .main-content { display: none; }
+
+      .shell.tab-settings .side-panel,
+      .shell.tab-import .side-panel {
+        grid-column: 1 / -1;
+        max-width: 520px;
+      }
+
       @media (max-width: 1080px) {
         .shell {
           grid-template-columns: 1fr;
         }
 
-        .weekday-grid {
-          gap: 6px;
-        }
+        /* 모바일: 사이드패널 기본 숨김 */
+        .side-panel { display: none; }
+
+        /* 탭별 표시 제어 */
+        .shell.tab-import .side-panel,
+        .shell.tab-settings .side-panel { display: grid; max-width: none; grid-column: 1 / -1; }
+
+        .weekday-grid { gap: 6px; }
+      }
+
+      .tutorial-step {
+        display: flex;
+        gap: 12px;
+        align-items: flex-start;
+        font: 500 14px/1.5 system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      }
+
+      .tutorial-num {
+        flex-shrink: 0;
+        width: 26px;
+        height: 26px;
+        border-radius: 50%;
+        background: var(--accent);
+        color: #fff;
+        font: 700 13px/26px system-ui, sans-serif;
+        text-align: center;
       }
 
       @media (max-width: 720px) {
@@ -674,35 +763,83 @@
   <body>
     <div class="app">
       <div class="hero">
-        <div>
-          <div class="eyebrow">Prototype for nurses</div>
-          <h1>Nurse Shift Board</h1>
-          <p class="lead">Day, Evening, Night, OFF. 빠르게 기록하고 달력으로 확인하는 간호사 듀티 입력 프로토타입입니다.</p>
-        </div>
-        <div class="status-pill" id="statusPill">LOCAL PROTOTYPE</div>
+        <h1>Nurse Shift Board</h1>
       </div>
 
+      <!-- ── 탭 바 ── -->
+      <nav class="icon-rail panel">
+        <button class="rail-btn is-active" data-tab="home">
+          <svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+          달력
+        </button>
+        <button class="rail-btn" data-tab="import">
+          <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          가져오기
+        </button>
+        <button class="rail-btn" data-tab="settings">
+          <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+          설정
+        </button>
+      </nav>
+
       <div class="shell">
-        <aside class="panel sidebar">
-          <section class="card">
-            <div class="section-title">Team</div>
-            <div class="empty" style="margin-bottom: 12px">지금은 두 사람 기준으로 한 달력에서 같이 봅니다.</div>
-            <div class="row" style="margin-bottom: 12px">
-              <input id="memberName" class="field" placeholder="예: 지은" />
-              <button class="btn btn-primary" id="addMemberBtn">추가</button>
-            </div>
-            <div class="team-list" id="teamList"></div>
-          </section>
 
-          <section class="card">
-            <div class="section-title">How it works</div>
-            <div class="empty">
-              1. 사람 추가<br />
-              2. 시작 날짜 클릭<br />
-              3. 아래 듀티를 순서대로 누르기
-            </div>
-          </section>
+        <!-- ── 사이드 패널 ── -->
+        <aside class="side-panel panel sidebar">
 
+          <!-- 홈 패널: 팀 -->
+          <div class="pane is-active" data-pane="home">
+            <section class="card">
+              <div class="section-title">Team</div>
+              <div class="empty" style="margin-bottom: 12px">지금은 두 사람 기준으로 한 달력에서 같이 봅니다.</div>
+              <div class="row" style="margin-bottom: 12px">
+                <input id="memberName" class="field" placeholder="예: 지은" />
+                <button class="btn btn-primary" id="addMemberBtn">추가</button>
+              </div>
+              <div class="team-list" id="teamList"></div>
+            </section>
+            <section class="card" id="tutorialCard">
+              <div class="section-title">사용법</div>
+              <div style="display:grid;gap:10px;margin-top:4px">
+                <div class="tutorial-step">
+                  <span class="tutorial-num">1</span>
+                  <div>
+                    <strong>이름 추가</strong><br>
+                    <span class="subtle">위 입력창에 이름을 쓰고 추가해요.</span>
+                  </div>
+                </div>
+                <div class="tutorial-step">
+                  <span class="tutorial-num">2</span>
+                  <div>
+                    <strong>근무표 사진으로 자동 입력</strong><br>
+                    <span class="subtle">가져오기 탭에서 근무표 사진을 올리면 듀티가 자동으로 채워져요.</span>
+                  </div>
+                </div>
+                <div class="tutorial-step">
+                  <span class="tutorial-num">3</span>
+                  <div>
+                    <strong>직접 입력</strong><br>
+                    <span class="subtle">달력에서 날짜를 탭하고 Day · Eve · Night 버튼으로 채워요.</span>
+                  </div>
+                </div>
+                <div class="tutorial-step">
+                  <span class="tutorial-num">4</span>
+                  <div>
+                    <strong>공유</strong><br>
+                    <span class="subtle">설정 탭에서 링크를 만들어 동료에게 보내요.</span>
+                  </div>
+                </div>
+              </div>
+            </section>
+            <section class="card" id="installCard" style="display:none">
+              <div class="section-title">앱으로 설치하기</div>
+              <div id="installInstructions"></div>
+              <button class="btn btn-primary" style="width:100%;margin-top:10px" id="installPwaBtn" style="display:none">홈 화면에 추가</button>
+            </section>
+          </div>
+
+          <!-- 가져오기 패널: OCR -->
+          <div class="pane" data-pane="import">
           <section class="card">
             <div class="section-title">근무표 가져오기</div>
             <div class="empty" style="margin-bottom: 12px">근무표 사진을 올리면 선택한 팀원의 듀티를 자동으로 채워드려요.</div>
@@ -737,7 +874,10 @@
             <div id="ocrStatus" class="subtle ocr-hint"></div>
             <p style="font-size:11px;color:#aaa;margin-top:8px;line-height:1.5">업로드된 원본 사진은 분석 후 즉시 삭제되며, 이름이 제거된 익명 데이터는 서비스 개선에 활용될 수 있습니다.</p>
           </section>
+          </div><!-- /pane import -->
 
+          <!-- 설정 패널: 공유 + 근무시간 + 캘린더 내보내기 -->
+          <div class="pane" data-pane="settings">
           <section class="card">
             <div class="section-title">공유</div>
             <div class="empty" style="margin-bottom: 12px">내 듀티 링크를 만들어 카카오톡·문자로 보내세요. 상대방이 링크를 열면 자동으로 함께 볼 수 있어요.</div>
@@ -771,14 +911,55 @@
             <div id="shareStatus" class="subtle ocr-hint" style="margin-top:8px"></div>
           </section>
 
+          <section class="card">
+            <div class="section-title">캘린더로 내보내기</div>
+            <div class="subtle" style="margin-bottom:12px">구글·애플 캘린더에 근무 일정을 추가해요.</div>
+            <div style="margin-bottom:10px">
+              <div class="subtle" style="margin-bottom:6px">누구의 일정</div>
+              <select id="exportMemberSelect" class="field" style="cursor:pointer"></select>
+            </div>
+            <button class="btn btn-primary" style="width:100%" id="exportCalBtn">📅 .ics 파일 저장</button>
+            <div id="exportCalStatus" class="subtle ocr-hint" style="margin-top:8px"></div>
+            <details style="margin-top:14px">
+              <summary style="cursor:pointer;font:600 12px/1.4 system-ui,sans-serif;color:var(--muted);letter-spacing:.06em;text-transform:uppercase">근무 시간 수정</summary>
+              <div class="subtle" style="margin:8px 0 10px">병원마다 다른 시간을 한 번만 설정해 두세요.</div>
+              <div style="display:grid;gap:8px">
+                <div class="shift-time-row">
+                  <span class="shift-time-label badge-day">Day</span>
+                  <input type="time" id="timeDayStart" class="field shift-time-input" value="07:00">
+                  <span class="shift-time-sep">~</span>
+                  <input type="time" id="timeDayEnd" class="field shift-time-input" value="15:30">
+                </div>
+                <div class="shift-time-row">
+                  <span class="shift-time-label badge-evening">Eve</span>
+                  <input type="time" id="timeEveningStart" class="field shift-time-input" value="15:00">
+                  <span class="shift-time-sep">~</span>
+                  <input type="time" id="timeEveningEnd" class="field shift-time-input" value="23:30">
+                </div>
+                <div class="shift-time-row">
+                  <span class="shift-time-label badge-night">Night</span>
+                  <input type="time" id="timeNightStart" class="field shift-time-input" value="23:00">
+                  <span class="shift-time-sep">~</span>
+                  <input type="time" id="timeNightEnd" class="field shift-time-input" value="07:30">
+                </div>
+                <div class="shift-time-row">
+                  <span class="shift-time-label badge-s">S</span>
+                  <input type="time" id="timeSStart" class="field shift-time-input" value="08:00">
+                  <span class="shift-time-sep">~</span>
+                  <input type="time" id="timeSEnd" class="field shift-time-input" value="17:00">
+                </div>
+              </div>
+            </details>
+          </section>
+          </div><!-- /pane settings -->
+
         </aside>
 
-        <main class="panel content">
+        <main class="panel content main-content" id="mainContent">
           <div class="topbar">
             <div>
               <p class="section-title" style="margin-bottom: 6px">Calendar</p>
               <h2 class="month-title" id="monthLabel">-</h2>
-              <p class="subtle" id="monthHint">-</p>
             </div>
             <div class="row">
               <button class="btn btn-secondary" id="prevMonthBtn">이전 달</button>
@@ -821,7 +1002,7 @@
         evening: "Evening",
         night: "Night",
         s: "S",
-
+        annual: "연차",
         off: "OFF",
       };
       const SHIFT_CLASS = {
@@ -829,15 +1010,15 @@
         evening: "badge-evening",
         night: "badge-night",
         s: "badge-s",
-
+        annual: "badge-annual",
         off: "badge-off",
       };
-      const SHIFT_ORDER = ["day", "evening", "night", "s", "off"];
+      const SHIFT_ORDER = ["day", "evening", "night", "s", "annual", "off"];
 
       // OCR 코드(D/E/N/S/Y/off) → 프론트엔드 shift 키 변환
       const OCR_TO_SHIFT = {
         D: "day", E: "evening", N: "night",
-        S: "s",
+        S: "s", A: "annual",
         off: "off", OFF: "off",
       };
       const WEEKDAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
@@ -849,7 +1030,6 @@
         addMemberBtn: document.getElementById("addMemberBtn"),
         toast: document.getElementById("toast"),
         monthLabel: document.getElementById("monthLabel"),
-        monthHint: document.getElementById("monthHint"),
         prevMonthBtn: document.getElementById("prevMonthBtn"),
         todayBtn: document.getElementById("todayBtn"),
         nextMonthBtn: document.getElementById("nextMonthBtn"),
@@ -860,7 +1040,6 @@
         stats: document.getElementById("stats"),
         clearBtn: document.getElementById("clearBtn"),
         clearAllBtn: document.getElementById("clearAllBtn"),
-        statusPill: document.getElementById("statusPill"),
         ocrFileInput: document.getElementById("ocrFileInput"),
         ocrYearSelect: document.getElementById("ocrYearSelect"),
         ocrMonthSelect: document.getElementById("ocrMonthSelect"),
@@ -880,6 +1059,20 @@
         shareJoinInput: document.getElementById("shareJoinInput"),
         shareJoinBtn: document.getElementById("shareJoinBtn"),
         shareStatus: document.getElementById("shareStatus"),
+        exportCalBtn: document.getElementById("exportCalBtn"),
+        exportCalStatus: document.getElementById("exportCalStatus"),
+        exportMemberSelect: document.getElementById("exportMemberSelect"),
+        installCard: document.getElementById("installCard"),
+        installInstructions: document.getElementById("installInstructions"),
+        installPwaBtn: document.getElementById("installPwaBtn"),
+        timeDayStart: document.getElementById("timeDayStart"),
+        timeDayEnd: document.getElementById("timeDayEnd"),
+        timeEveningStart: document.getElementById("timeEveningStart"),
+        timeEveningEnd: document.getElementById("timeEveningEnd"),
+        timeNightStart: document.getElementById("timeNightStart"),
+        timeNightEnd: document.getElementById("timeNightEnd"),
+        timeSStart: document.getElementById("timeSStart"),
+        timeSEnd: document.getElementById("timeSEnd"),
       };
 
       const now = new Date();
@@ -985,6 +1178,70 @@
         if (e.key === "Enter") joinWithCode();
       });
 
+      dom.exportCalBtn.addEventListener("click", exportCalendar);
+
+      // ── 아이콘 레일 탭 전환 ──────────────────────────────────────────────
+      const shellEl = document.querySelector(".shell");
+
+      function switchTab(tab) {
+        // 레일 버튼 활성화
+        document.querySelectorAll(".rail-btn").forEach(b =>
+          b.classList.toggle("is-active", b.dataset.tab === tab));
+        // 패널 콘텐츠 교체
+        document.querySelectorAll(".pane").forEach(p =>
+          p.classList.toggle("is-active", p.dataset.pane === tab));
+        // shell 클래스로 모바일 표시 제어 (CSS가 처리)
+        shellEl.className = shellEl.className.replace(/\btab-\w+\b/g, "").trim();
+        shellEl.classList.add(`tab-${tab}`);
+      }
+
+      document.querySelectorAll(".rail-btn").forEach(btn =>
+        btn.addEventListener("click", () => switchTab(btn.dataset.tab)));
+
+      switchTab("home");
+
+      // ── 근무 시간 설정 ────────────────────────────────────────────────────
+      const SHIFT_TIMES_KEY = "nurse-shift-board:shift-times";
+      const DEFAULT_SHIFT_TIMES = {
+        day:     { start: "07:00", end: "15:30" },
+        evening: { start: "15:00", end: "23:30" },
+        night:   { start: "23:00", end: "07:30" },
+        s:       { start: "08:00", end: "17:00" },
+      };
+
+      function loadShiftTimes() {
+        try { return JSON.parse(localStorage.getItem(SHIFT_TIMES_KEY)) ?? { ...DEFAULT_SHIFT_TIMES }; }
+        catch { return { ...DEFAULT_SHIFT_TIMES }; }
+      }
+
+      function saveShiftTimes() {
+        localStorage.setItem(SHIFT_TIMES_KEY, JSON.stringify({
+          day:     { start: dom.timeDayStart.value,     end: dom.timeDayEnd.value },
+          evening: { start: dom.timeEveningStart.value, end: dom.timeEveningEnd.value },
+          night:   { start: dom.timeNightStart.value,   end: dom.timeNightEnd.value },
+          s:       { start: dom.timeSStart.value,       end: dom.timeSEnd.value },
+        }));
+      }
+
+      // 저장된 시간 불러와서 input에 세팅
+      (function initShiftTimes() {
+        const saved = loadShiftTimes();
+        dom.timeDayStart.value     = saved.day.start;
+        dom.timeDayEnd.value       = saved.day.end;
+        dom.timeEveningStart.value = saved.evening.start;
+        dom.timeEveningEnd.value   = saved.evening.end;
+        dom.timeNightStart.value   = saved.night.start;
+        dom.timeNightEnd.value     = saved.night.end;
+        dom.timeSStart.value       = saved.s.start;
+        dom.timeSEnd.value         = saved.s.end;
+      })();
+
+      [dom.timeDayStart, dom.timeDayEnd,
+       dom.timeEveningStart, dom.timeEveningEnd,
+       dom.timeNightStart, dom.timeNightEnd,
+       dom.timeSStart, dom.timeSEnd
+      ].forEach(el => el.addEventListener("change", saveShiftTimes));
+
       // 링크로 들어온 경우 자동 join
       (function checkJoinParam() {
         const code = new URLSearchParams(window.location.search).get("join");
@@ -993,6 +1250,75 @@
         dom.shareJoinInput.value = code.toUpperCase();
         joinWithCode();
       })();
+
+      function exportCalendar() {
+        const selectedId = dom.exportMemberSelect.value;
+        const member = state.members.find(m => m.id === selectedId) ?? activeMember();
+        if (!member) { setToast("팀원을 먼저 추가해 주세요."); return; }
+
+        const SHIFT_NAMES = { day: "Day 근무", evening: "Evening 근무", night: "Night 근무", s: "S 근무", annual: "연차" };
+        const times = loadShiftTimes();
+
+        const bucket = getBucket(member.id);
+        const entries = Object.entries(bucket).filter(([, shift]) => shift && shift !== "off");
+
+        if (entries.length === 0) {
+          dom.exportCalStatus.textContent = "내보낼 근무 일정이 없어요.";
+          return;
+        }
+
+        const stamp = new Date().toISOString().replace(/[-:.]/g, "").slice(0, 15) + "Z";
+
+        function fmtLocal(date) {
+          return `${date.getFullYear()}${String(date.getMonth()+1).padStart(2,"0")}${String(date.getDate()).padStart(2,"0")}T${String(date.getHours()).padStart(2,"0")}${String(date.getMinutes()).padStart(2,"0")}00`;
+        }
+
+        const events = entries.map(([dateStr, shift]) => {
+          const [y, m, d] = dateStr.split("-").map(Number);
+          const { start, end } = times[shift] ?? DEFAULT_SHIFT_TIMES[shift];
+          const [sh, sm] = start.split(":").map(Number);
+          const [eh, em] = end.split(":").map(Number);
+
+          const startDt = new Date(y, m - 1, d, sh, sm);
+          // 종료 시간이 시작보다 작으면 야간처럼 다음날로 넘어가는 케이스
+          const crossesMidnight = (eh * 60 + em) <= (sh * 60 + sm);
+          const endDt = new Date(y, m - 1, d + (crossesMidnight ? 1 : 0), eh, em);
+
+          const uid = `${dateStr}-${shift}-${member.id}@nurse-shift-board`;
+          return [
+            "BEGIN:VEVENT",
+            `UID:${uid}`,
+            `DTSTAMP:${stamp}`,
+            `DTSTART;TZID=Asia/Seoul:${fmtLocal(startDt)}`,
+            `DTEND;TZID=Asia/Seoul:${fmtLocal(endDt)}`,
+            `SUMMARY:${SHIFT_NAMES[shift] ?? shift}`,
+            "END:VEVENT",
+          ].join("\r\n");
+        });
+
+        const ics = [
+          "BEGIN:VCALENDAR",
+          "VERSION:2.0",
+          "PRODID:-//Nurse Shift Board//KR",
+          "CALSCALE:GREGORIAN",
+          "METHOD:PUBLISH",
+          `X-WR-CALNAME:듀티 - ${member.name}`,
+          "X-WR-TIMEZONE:Asia/Seoul",
+          ...events,
+          "END:VCALENDAR",
+        ].join("\r\n");
+
+        const blob = new Blob([ics], { type: "text/calendar;charset=utf-8" });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = `duty-${member.name}.ics`;
+        a.click();
+        URL.revokeObjectURL(url);
+
+        dom.exportCalStatus.textContent = `근무일 ${entries.length}개를 저장했어요.`;
+        setToast("캘린더 파일을 저장했어요!");
+      }
 
       function shareUrl(code) {
         return `${window.location.origin}${window.location.pathname}?join=${code}`;
@@ -1088,7 +1414,9 @@
           const partnerShifts = data.shifts;
 
           // 이름 없이 슬롯에 듀티만 적용 (이름은 로컬에서 관리)
-          let partner = state.members.find((m) => m.id !== state.activeMemberId);
+          // 이미 "상대방" 슬롯이 있으면 재사용 (activeMemberId와 무관하게)
+          let partner = state.members.find((m) => m.name === "상대방")
+                     ?? state.members.find((m) => m.id !== state.activeMemberId);
           if (!partner && state.members.length < MAX_MEMBERS) {
             partner = { id: crypto.randomUUID(), name: "상대방" };
             state.members.push(partner);
@@ -1286,6 +1614,13 @@
         ).join("") || '<option value="">팀원 없음</option>';
         if (state.members.some(m => m.id === prev)) dom.shareMemberSelect.value = prev;
 
+        // 내보내기 팀원 드롭다운 동기화
+        const prevExp = dom.exportMemberSelect.value;
+        dom.exportMemberSelect.innerHTML = state.members.map(m =>
+          `<option value="${m.id}">${escapeHtml(m.name)}</option>`
+        ).join("") || '<option value="">팀원 없음</option>';
+        if (state.members.some(m => m.id === prevExp)) dom.exportMemberSelect.value = prevExp;
+
         dom.teamList.querySelectorAll("[data-member-id]").forEach((button) => {
           button.addEventListener("click", () => {
             state.activeMemberId = button.dataset.memberId;
@@ -1305,7 +1640,6 @@
         const members = visibleMembers();
         if (!members.length) {
           dom.monthLabel.textContent = "팀원이 없어요";
-          dom.monthHint.textContent = "먼저 팀원을 추가하면 달력을 사용할 수 있어요.";
           dom.dayGrid.innerHTML = `<div class="calendar-empty">팀원을 추가한 뒤 시작해 주세요.</div>`;
           return;
         }
@@ -1320,7 +1654,6 @@
         const memberColors = ["cal-name-m1", "cal-name-m2"];
 
         dom.monthLabel.textContent = firstOfMonth.toLocaleDateString("ko-KR", { year: "numeric", month: "long" });
-        dom.monthHint.textContent = `${members.map((member) => member.name).join(" · ")}의 듀티를 한 달력에서 같이 볼 수 있어요.`;
 
         let html = "";
         for (let w = 0; w < weeks; w++) {
@@ -1497,7 +1830,7 @@
       }
 
       function updateStatus() {
-        dom.statusPill.textContent = `${state.members.length} MEMBERS · ${formatVisibleMonth()}`;
+        // statusPill removed
       }
 
       function setShift(memberId, date, shift) {
@@ -1696,6 +2029,55 @@
       if ("serviceWorker" in navigator) {
         navigator.serviceWorker.register("/sw.js").catch(() => {});
       }
+
+      // ── PWA 설치 안내 ──────────────────────────────────────────────
+      (function initInstall() {
+        const card = dom.installCard;
+        const instructions = dom.installInstructions;
+        const btn = dom.installPwaBtn;
+        const isIos = /iphone|ipad|ipod/i.test(navigator.userAgent);
+        const isAndroid = /android/i.test(navigator.userAgent);
+        const isStandalone = window.matchMedia("(display-mode: standalone)").matches
+          || navigator.standalone === true;
+
+        if (isStandalone) return; // 이미 설치됨
+
+        card.style.display = "";
+
+        if (isIos) {
+          instructions.innerHTML =
+            `<div class="subtle" style="line-height:1.7">
+              Safari에서 하단 <strong>공유 버튼(□↑)</strong>을 누른 뒤<br>
+              <strong>"홈 화면에 추가"</strong>를 선택하세요.
+            </div>`;
+        } else if (isAndroid) {
+          instructions.innerHTML =
+            `<div class="subtle" style="line-height:1.7">아래 버튼을 눌러 홈 화면에 추가하세요.</div>`;
+          btn.style.display = "";
+        } else {
+          instructions.innerHTML =
+            `<div class="subtle" style="line-height:1.7">
+              Chrome 주소창 오른쪽의 <strong>설치(⊕)</strong> 아이콘을 클릭하거나,<br>
+              아래 버튼을 누르세요.
+            </div>`;
+          btn.style.display = "";
+        }
+
+        let deferredPrompt = null;
+        window.addEventListener("beforeinstallprompt", (e) => {
+          e.preventDefault();
+          deferredPrompt = e;
+          btn.style.display = "";
+        });
+
+        btn.addEventListener("click", async () => {
+          if (!deferredPrompt) return;
+          deferredPrompt.prompt();
+          const { outcome } = await deferredPrompt.userChoice;
+          if (outcome === "accepted") card.style.display = "none";
+          deferredPrompt = null;
+        });
+      })();
     </script>
   </body>
 </html>
