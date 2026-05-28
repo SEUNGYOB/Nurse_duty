@@ -1435,16 +1435,26 @@
         const fileName = `duty-${member.name}.ics`;
         const file = new File([blob], fileName, { type: "text/calendar" });
 
-        if (navigator.canShare && navigator.canShare({ files: [file] })) {
-          // iOS Safari / Android Chrome — Web Share API로 캘린더 앱에 직접 전달
+        const ua = navigator.userAgent;
+        const isIos = /iphone|ipad|ipod/i.test(ua);
+        const isIosSafari = isIos && /Version\//i.test(ua) &&
+          !/KAKAOTALK|Instagram|NAVER|CriOS|FxiOS|OPiOS|EdgiOS/i.test(ua);
+
+        if (isIosSafari) {
+          // iOS Safari: data URI로 캘린더 앱 직접 오픈
+          const dataUri = "data:text/calendar;charset=utf-8," + encodeURIComponent(ics);
+          window.location.href = dataUri;
+          dom.exportCalStatus.textContent = `근무일 ${entries.length}개 · 캘린더에 추가해 주세요.`;
+          setToast("캘린더 앱이 열려요!");
+        } else if (navigator.canShare && navigator.canShare({ files: [file] })) {
+          // Android Chrome 등 — Web Share API
           navigator.share({ files: [file], title: `듀티 - ${member.name}` })
             .then(() => {
               dom.exportCalStatus.textContent = `근무일 ${entries.length}개를 공유했어요.`;
               setToast("캘린더 파일을 공유했어요!");
             })
             .catch((err) => {
-              if (err.name !== "AbortError") setToast("공유에 실패했어요. 파일로 저장할게요.");
-              fallbackDownload();
+              if (err.name !== "AbortError") fallbackDownload();
             });
         } else {
           fallbackDownload();
