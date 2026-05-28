@@ -1,6 +1,6 @@
 {
-  "name": "Nurse Shift Board",
-  "short_name": "듀티 달력",
+  "name": "Nurse Couple",
+  "short_name": "Nurse Couple",
   "description": "간호사 듀티 달력 — 오프데이 공유",
   "start_url": "/",
   "display": "standalone",
