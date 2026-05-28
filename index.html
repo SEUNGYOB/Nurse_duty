@@ -968,7 +968,16 @@
             </div>
 
             <button class="btn btn-primary" style="width:100%;margin-bottom:8px" id="ocrImportBtn" disabled>가져오기</button>
-            <div id="ocrStatus" class="subtle ocr-hint"></div>
+            <div id="ocrProgressWrap" style="display:none;margin-bottom:8px">
+              <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:5px">
+                <span id="ocrStatus" class="subtle ocr-hint" style="flex:1"></span>
+                <span id="ocrElapsed" class="subtle" style="font-size:12px;color:var(--muted);margin-left:8px;white-space:nowrap"></span>
+              </div>
+              <div style="height:5px;background:rgba(24,32,42,0.1);border-radius:4px;overflow:hidden">
+                <div id="ocrProgressBar" style="height:100%;width:0%;background:var(--accent);border-radius:4px;transition:width 0.5s ease"></div>
+              </div>
+            </div>
+            <div id="ocrStatusStatic" class="subtle ocr-hint"></div>
             <p style="font-size:11px;color:#aaa;margin-top:8px;line-height:1.5">업로드된 원본 사진은 분석 후 즉시 삭제되며, 이름이 제거된 익명 데이터는 서비스 개선에 활용될 수 있습니다.</p>
           </section>
           </div><!-- /pane import -->
@@ -1159,6 +1168,10 @@
         ocrImportBtn: document.getElementById("ocrImportBtn"),
         ocrFileName: document.getElementById("ocrFileName"),
         ocrStatus: document.getElementById("ocrStatus"),
+        ocrStatusStatic: document.getElementById("ocrStatusStatic"),
+        ocrProgressWrap: document.getElementById("ocrProgressWrap"),
+        ocrProgressBar: document.getElementById("ocrProgressBar"),
+        ocrElapsed: document.getElementById("ocrElapsed"),
         shareMemberSelect: document.getElementById("shareMemberSelect"),
         shareCreateBtn: document.getElementById("shareCreateBtn"),
         shareCodeWrap: document.getElementById("shareCodeWrap"),
@@ -1608,7 +1621,8 @@
             let event;
             try { event = JSON.parse(line.slice(6)); } catch { continue; }
             if (event.type === "progress") {
-              dom.ocrStatus.textContent = event.message;
+              const pct = Object.entries(OCR_PROGRESS_MAP).find(([k]) => event.message.includes(k))?.[1] ?? null;
+              setOcrProgress(pct ?? parseInt(dom.ocrProgressBar.style.width) ?? 10, event.message);
             } else if (event.type === "result") {
               return event.data;
             } else if (event.type === "error") {
@@ -1619,6 +1633,18 @@
         throw new Error("결과를 읽지 못했어요.");
       }
 
+      const OCR_PROGRESS_MAP = {
+        "근무표 읽는 중": 30,
+        "AI가 듀티 보는 중": 60,
+        "꼼꼼히 확인 중": 80,
+        "거의 다 됐어요": 95,
+      };
+
+      function setOcrProgress(pct, msg) {
+        dom.ocrProgressBar.style.width = pct + "%";
+        if (msg) dom.ocrStatus.textContent = msg;
+      }
+
       async function recognizeOcr() {
         const file = dom.ocrFileInput.files[0];
         if (!file) return;
@@ -1626,12 +1652,23 @@
         dom.ocrRecognizeBtn.disabled = true;
         dom.ocrImportBtn.disabled = true;
         _ocrAllRows = null;
-        dom.ocrStatus.textContent = "사진 준비 중...";
+
+        // 진행 바 표시
+        dom.ocrProgressWrap.style.display = "";
+        dom.ocrStatusStatic.textContent = "";
+        setOcrProgress(5, "사진 준비 중...");
+
+        // 경과 시간 타이머
+        const startTime = Date.now();
+        const elapsedTimer = setInterval(() => {
+          const sec = Math.floor((Date.now() - startTime) / 1000);
+          dom.ocrElapsed.textContent = `${sec}초`;
+        }, 1000);
 
         try {
           const compressed = await compressImage(file);
           const sizeMB = (compressed.size / 1024 / 1024).toFixed(1);
-          dom.ocrStatus.textContent = `근무표 분석 시작 (${sizeMB}MB)`;
+          setOcrProgress(10, `근무표 분석 시작 (${sizeMB}MB)`);
 
           const formData = new FormData();
           formData.append("file", compressed, file.name);
@@ -1640,7 +1677,11 @@
 
           const result = await _streamOcr(formData);
           const rows = result.rows ?? [];
-          if (!rows.length) { dom.ocrStatus.textContent = "행을 인식하지 못했어요."; return; }
+          if (!rows.length) {
+            dom.ocrProgressWrap.style.display = "none";
+            dom.ocrStatusStatic.textContent = "행을 인식하지 못했어요.";
+            return;
+          }
 
           _ocrAllRows = result;
 
@@ -1654,10 +1695,15 @@
           dom.ocrRowWrap.style.display = "";
 
           dom.ocrImportBtn.disabled = false;
-          dom.ocrStatus.textContent = `${result.year}년 ${result.month}월 · ${rows.length}명 인식 완료. 이름을 선택 후 가져오기를 누르세요.`;
+          setOcrProgress(100, "완료!");
+          setTimeout(() => { dom.ocrProgressWrap.style.display = "none"; }, 600);
+          dom.ocrStatusStatic.textContent = `${result.year}년 ${result.month}월 · ${rows.length}명 인식 완료. 이름을 선택 후 가져오기를 누르세요.`;
         } catch (e) {
-          dom.ocrStatus.textContent = `오류: ${e.message}`;
+          dom.ocrProgressWrap.style.display = "none";
+          dom.ocrStatusStatic.textContent = `오류: ${e.message}`;
         } finally {
+          clearInterval(elapsedTimer);
+          dom.ocrElapsed.textContent = "";
           dom.ocrRecognizeBtn.disabled = !dom.ocrFileInput.files[0];
         }
       }
