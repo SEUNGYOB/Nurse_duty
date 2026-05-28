@@ -644,6 +644,39 @@
         font: 500 14px/1.5 system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
       }
 
+      /* ── FAQ 아코디언 ── */
+      .faq-item {
+        border-bottom: 1px solid var(--line);
+      }
+      .faq-item:last-child { border-bottom: none; }
+      .faq-q {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 12px 0;
+        font: 600 14px/1.4 system-ui, -apple-system, sans-serif;
+        color: var(--ink);
+        cursor: pointer;
+        list-style: none;
+        gap: 8px;
+      }
+      .faq-q::-webkit-details-marker { display: none; }
+      .faq-q::after {
+        content: "+";
+        flex-shrink: 0;
+        font-size: 18px;
+        color: var(--muted);
+        transition: transform 0.2s;
+      }
+      details[open] .faq-q::after {
+        transform: rotate(45deg);
+      }
+      .faq-a {
+        padding: 0 0 14px;
+        font: 500 13px/1.7 system-ui, -apple-system, sans-serif;
+        color: var(--muted);
+      }
+
       /* ── 인앱 브라우저 배너 ── */
       #inappBanner {
         display: none;
@@ -1059,6 +1092,44 @@
                 <span class="shift-time-sep">~</span>
                 <input type="time" id="timeSEnd" class="field shift-time-input" value="17:00">
               </div>
+            </div>
+          </section>
+
+          <section class="card">
+            <div class="section-title">자주 묻는 질문</div>
+            <div style="display:grid;gap:0">
+
+              <details class="faq-item">
+                <summary class="faq-q">캘린더에 추가한 일정을 한번에 지우려면?</summary>
+                <div class="faq-a">
+                  가져오기 전에 새 캘린더를 먼저 만들어 두세요.<br>
+                  <strong>iPhone 캘린더 앱 → 캘린더 탭 → 캘린더 추가</strong>로 "듀티" 캘린더를 만든 뒤, 가져오기 화면에서 그 캘린더를 선택하면 나중에 캘린더 전체를 삭제해서 한번에 지울 수 있어요.
+                </div>
+              </details>
+
+              <details class="faq-item">
+                <summary class="faq-q">홈 화면에 앱으로 설치하려면?</summary>
+                <div class="faq-a">
+                  <strong>Safari</strong>에서만 설치할 수 있어요.<br>
+                  Safari로 이 페이지를 열고 → 하단 공유 버튼(□↑) → <strong>"홈 화면에 추가"</strong>를 선택하세요.
+                </div>
+              </details>
+
+              <details class="faq-item">
+                <summary class="faq-q">데이터가 사라졌어요</summary>
+                <div class="faq-a">
+                  입력한 근무 일정은 이 기기의 브라우저에만 저장돼요. 브라우저 데이터를 지우거나 다른 기기로 접속하면 보이지 않아요.<br>
+                  중요한 일정은 캘린더로 내보내 두세요.
+                </div>
+              </details>
+
+              <details class="faq-item">
+                <summary class="faq-q">사진 인식이 잘 안 돼요</summary>
+                <div class="faq-a">
+                  근무표 전체가 잘 보이도록 정면에서 촬영해 주세요. 그림자나 반사광이 있으면 인식률이 낮아져요. 밝은 곳에서 찍은 선명한 사진이 가장 잘 인식돼요.
+                </div>
+              </details>
+
             </div>
           </section>
           </div><!-- /pane settings -->
