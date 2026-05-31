@@ -1432,18 +1432,19 @@
 
         const ua = navigator.userAgent;
         const isIos = /iphone|ipad|ipod/i.test(ua);
-        const isMobile = isIos || /android/i.test(ua);
+        const isAndroid = /android/i.test(ua);
+        const isMobile = isIos || isAndroid;
 
-        if (navigator.canShare && navigator.canShare({ files: [file] })) {
-          // Web Share API 지원 + text/calendar 허용 → 공유 시트
+        let canShareFile = false;
+        try { canShareFile = !!(navigator.canShare && navigator.canShare({ files: [file] })); } catch (e) {}
+
+        if (canShareFile) {
           navigator.share({ files: [file], title: `듀티 - ${member.name}` })
             .then(() => {
               dom.exportCalStatus.textContent = `근무일 ${entries.length}개를 공유했어요.`;
               setToast("캘린더 파일을 공유했어요!");
             })
-            .catch((err) => {
-              if (err.name !== "AbortError") tryWebcal();
-            });
+            .catch((err) => { if (err.name !== "AbortError") tryWebcal(); });
         } else if (isMobile) {
           tryWebcal();
         } else {
@@ -1451,17 +1452,26 @@
         }
 
         function tryWebcal() {
-          // iOS/Android: webcal:// → OS가 캘린더 앱으로 직접 라우팅 (브라우저 무관)
           try {
             const encoded = btoa(unescape(encodeURIComponent(ics)))
               .replace(/\+/g, "-").replace(/\//g, "_").replace(/=/g, "");
-            const webcalUrl = `webcal://${window.location.host}/api/ics?d=${encoded}`;
-            window.location.href = webcalUrl;
-            dom.exportCalStatus.textContent = `근무일 ${entries.length}개 · 캘린더에 추가해 주세요.`;
-            setToast("캘린더 앱이 열려요!");
+            const host = window.location.host;
+            // Android: Intent URL로 구글 캘린더 앱 직접 호출
+            // iOS: webcal:// scheme
+            const calUrl = isAndroid
+              ? `intent://${host}/api/ics?d=${encoded}#Intent;scheme=webcal;package=com.google.android.calendar;action=android.intent.action.VIEW;end`
+              : `webcal://${host}/api/ics?d=${encoded}`;
+            const a = document.createElement("a");
+            a.href = calUrl;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
           } catch (e) {
             fallbackDownload();
+            return;
           }
+          dom.exportCalStatus.textContent = `근무일 ${entries.length}개 · 캘린더에 추가해 주세요.`;
+          setToast("캘린더 앱이 열려요!");
         }
 
         function fallbackDownload() {
