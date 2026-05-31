@@ -1387,8 +1387,8 @@
 
         const bucket = getBucket(member.id);
         console.log("bucket keys:", Object.keys(bucket).length);
-        const entries = Object.entries(bucket).filter(([, shift]) => shift && shift !== "off");
-        console.log("entries.length:", entries.length);
+        const entries = Object.entries(bucket).filter(([, shift]) => shift && shift !== "off" && shift !== "annual");
+        console.log("entries.length:", entries.length, "(annual 제외)");
 
         if (entries.length === 0) {
           console.log("⚠️ 근무 일정이 없음");
