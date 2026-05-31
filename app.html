@@ -1388,7 +1388,7 @@
           setToast("내보낼 근무 일정이 없어요.");
           return;
         }
-        setToast(`디버그: 일정 ${entries.length}개 / canShare=${canShareFile} / mobile=${isMobile} / android=${isAndroid}`);
+        alert(`디버그: 일정 ${entries.length}개 / canShare=${canShareFile} / mobile=${isMobile} / android=${isAndroid}`);
 
         const stamp = new Date().toISOString().replace(/[-:.]/g, "").slice(0, 15) + "Z";
 
