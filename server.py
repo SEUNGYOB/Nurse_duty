@@ -71,7 +71,7 @@ def serve_ics():
     return Response(
         ics_content,
         mimetype="text/calendar",
-        headers={"Content-Disposition": "inline; filename=duty.ics"},
+        headers={"Content-Disposition": "attachment; filename=duty.ics"},
     )
 
 
