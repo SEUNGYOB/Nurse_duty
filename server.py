@@ -78,14 +78,24 @@ def serve_ics():
 @app.get("/")
 @app.get("/index.html")
 def index():
-    return send_file(ROOT / "index.html")
+    response = send_file(ROOT / "index.html")
+    response.headers["Cache-Control"] = "no-cache, no-store, must-revalidate"
+    response.headers["Pragma"] = "no-cache"
+    response.headers["Expires"] = "0"
+    return response
 
 
 @app.get("/<path:filename>")
 def serve_static(filename):
     file_path = ROOT / filename
     if file_path.exists() and file_path.is_file():
-        return send_from_directory(ROOT, filename)
+        response = send_from_directory(ROOT, filename)
+        # HTML 파일: no-cache 헤더
+        if filename.endswith(".html"):
+            response.headers["Cache-Control"] = "no-cache, no-store, must-revalidate"
+            response.headers["Pragma"] = "no-cache"
+            response.headers["Expires"] = "0"
+        return response
     return jsonify({"error": "파일을 찾을 수 없습니다."}), 404
 
 
