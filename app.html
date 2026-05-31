@@ -1462,8 +1462,14 @@
           a.download = fileName;
           a.click();
           URL.revokeObjectURL(url);
+
+          // 다운로드 후 Google Calendar 임포트 페이지 열기
+          setTimeout(() => {
+            window.open("https://calendar.google.com/calendar/u/0/r/import", "_blank");
+          }, 500);
+
           dom.exportCalStatus.textContent = `근무일 ${entries.length}개를 저장했어요.`;
-          setToast("캘린더 파일을 저장했어요!");
+          setToast("파일 저장 후 구글 캘린더 임포트 페이지가 열려요!");
         }
       }
 
