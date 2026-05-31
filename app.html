@@ -1373,9 +1373,10 @@
         try { _exportCalendar(); } catch (err) { setToast("오류: " + err.message); }
       }
       function _exportCalendar() {
+        alert("_exportCalendar 실행됨 / member=" + (dom.exportMemberSelect.value));
         const selectedId = dom.exportMemberSelect.value;
         const member = state.members.find(m => m.id === selectedId) ?? activeMember();
-        if (!member) { setToast("팀원을 먼저 추가해 주세요."); return; }
+        if (!member) { alert("member 없음"); setToast("팀원을 먼저 추가해 주세요."); return; }
 
         const SHIFT_NAMES = { day: "Day 근무", evening: "Evening 근무", night: "Night 근무", s: "S 근무", annual: "연차" };
         const times = loadShiftTimes();
