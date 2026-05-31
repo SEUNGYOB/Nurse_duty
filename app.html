@@ -1370,24 +1370,33 @@
       })();
 
       function exportCalendar() {
-        try { _exportCalendar(); } catch (err) { setToast("오류: " + err.message); }
+        console.log("📅 exportCalendar 클릭됨");
+        try { _exportCalendar(); } catch (err) { console.error("exportCalendar error:", err); setToast("오류: " + err.message); }
       }
       function _exportCalendar() {
+        console.log("_exportCalendar 시작, members:", state.members.length);
         const selectedId = dom.exportMemberSelect.value;
+        console.log("selectedId:", selectedId);
         const member = state.members.find(m => m.id === selectedId) ?? activeMember();
+        console.log("선택된 팀원:", member?.name);
         if (!member) { setToast("팀원을 먼저 추가해 주세요."); return; }
 
         const SHIFT_NAMES = { day: "Day 근무", evening: "Evening 근무", night: "Night 근무", s: "S 근무", annual: "연차" };
         const times = loadShiftTimes();
+        console.log("times:", times);
 
         const bucket = getBucket(member.id);
+        console.log("bucket keys:", Object.keys(bucket).length);
         const entries = Object.entries(bucket).filter(([, shift]) => shift && shift !== "off");
+        console.log("entries.length:", entries.length);
 
         if (entries.length === 0) {
+          console.log("⚠️ 근무 일정이 없음");
           dom.exportCalStatus.textContent = "내보낼 근무 일정이 없어요.";
           setToast("내보낼 근무 일정이 없어요.");
           return;
         }
+        console.log("✅ 근무 일정 있음, 진행 중...");
 
         const stamp = new Date().toISOString().replace(/[-:.]/g, "").slice(0, 15) + "Z";
 
@@ -1395,6 +1404,7 @@
           return `${date.getFullYear()}${String(date.getMonth()+1).padStart(2,"0")}${String(date.getDate()).padStart(2,"0")}T${String(date.getHours()).padStart(2,"0")}${String(date.getMinutes()).padStart(2,"0")}00`;
         }
 
+        console.log("📝 ICS 이벤트 생성 중... entries:", entries.length);
         const events = entries.map(([dateStr, shift]) => {
           const [y, m, d] = dateStr.split("-").map(Number);
           const { start, end } = times[shift] ?? DEFAULT_SHIFT_TIMES[shift];
@@ -1417,6 +1427,7 @@
             "END:VEVENT",
           ].join("\r\n");
         });
+        console.log("✅ ICS 이벤트 생성 완료:", events.length, "개");
 
         const ics = [
           "BEGIN:VCALENDAR",
@@ -1429,32 +1440,44 @@
           ...events,
           "END:VCALENDAR",
         ].join("\r\n");
+        console.log("✅ VCALENDAR 생성 완료, 크기:", ics.length, "bytes");
+        console.log("📄 ICS 내용 샘플:", ics.substring(0, 200));
 
         const blob = new Blob([ics], { type: "text/calendar;charset=utf-8" });
+        console.log("✅ Blob 생성 완료, 크기:", blob.size, "bytes");
         const fileName = `duty-${member.name}.ics`;
         const file = new File([blob], fileName, { type: "text/calendar" });
+        console.log("✅ File 생성 완료:", fileName);
 
         const ua = navigator.userAgent;
+        console.log("🔍 User Agent:", ua);
         const isIos = /iphone|ipad|ipod/i.test(ua);
         const isAndroid = /android/i.test(ua);
         const isMobile = isIos || isAndroid;
+        console.log("📱 OS 감지 → iOS:", isIos, "| Android:", isAndroid, "| Mobile:", isMobile);
 
         if (isIos) {
-          // iOS: webcal:// → OS가 캘린더 앱으로 직접 연결
+          console.log("📲 iOS 경로: tryWebcal() 호출");
           tryWebcal();
         } else if (isAndroid) {
-          // Android: webcal:// Intent URL → 구글 캘린더
+          console.log("📲 Android 경로: tryWebcal() 호출");
           tryWebcal();
         } else {
+          console.log("🖥️ Desktop 경로: fallbackDownload() 호출");
           fallbackDownload();
         }
 
         function tryWebcal() {
+          console.log("🔗 tryWebcal() 시작");
           let encoded;
           try {
+            console.log("⚙️ Base64 인코딩 중...");
             encoded = btoa(unescape(encodeURIComponent(ics)))
               .replace(/\+/g, "-").replace(/\//g, "_").replace(/=/g, "");
+            console.log("✅ Base64 인코딩 완료, 길이:", encoded.length);
           } catch (e) {
+            console.error("❌ Base64 인코딩 실패:", e.message);
+            console.log("⚠️ fallbackDownload()로 전환");
             fallbackDownload();
             return;
           }
@@ -1465,21 +1488,45 @@
           const calUrl = isAndroid
             ? `intent://${host}/api/ics?d=${encoded}#Intent;scheme=webcal;package=com.google.android.calendar;action=android.intent.action.VIEW;end`
             : `webcal://${host}/api/ics?d=${encoded}`;
-          setTimeout(() => { window.location.href = calUrl; }, 300);
+          console.log("📤 캘린더 URL:", calUrl.substring(0, 100) + "...");
+          setTimeout(() => {
+            console.log("🎯 window.location.href 설정 중...");
+            window.location.href = calUrl;
+          }, 300);
         }
 
         function fallbackDownload() {
-          const url = URL.createObjectURL(blob);
-          const a = document.createElement("a");
-          a.href = url;
-          a.download = fileName;
-          a.click();
-          URL.revokeObjectURL(url);
-          setTimeout(() => {
-            window.open("https://calendar.google.com/calendar/u/0/r/import", "_blank");
-          }, 500);
-          dom.exportCalStatus.textContent = `근무일 ${entries.length}개를 저장했어요.`;
-          setToast("파일 저장 후 구글 캘린더 임포트 페이지가 열려요!");
+          console.log("💾 fallbackDownload() 시작");
+          try {
+            const url = URL.createObjectURL(blob);
+            console.log("✅ Blob URL 생성 완료:", url);
+
+            const a = document.createElement("a");
+            console.log("📌 <a> 엘리먼트 생성");
+
+            a.href = url;
+            a.download = fileName;
+            console.log("✅ href, download 속성 설정:", { href: url, download: fileName });
+
+            console.log("🖱️ a.click() 호출 중...");
+            a.click();
+            console.log("✅ a.click() 완료");
+
+            URL.revokeObjectURL(url);
+            console.log("✅ Blob URL 정리 완료");
+
+            setTimeout(() => {
+              console.log("🌐 구글 캘린더 임포트 페이지 열기");
+              window.open("https://calendar.google.com/calendar/u/0/r/import", "_blank");
+            }, 500);
+
+            dom.exportCalStatus.textContent = `근무일 ${entries.length}개를 저장했어요.`;
+            setToast("파일 저장 후 구글 캘린더 임포트 페이지가 열려요!");
+            console.log("✅ fallbackDownload() 완료");
+          } catch (err) {
+            console.error("❌ fallbackDownload() 에러:", err.message, err);
+            setToast("파일 저장 실패: " + err.message);
+          }
         }
       }
 
