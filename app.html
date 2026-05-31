@@ -1426,11 +1426,25 @@
           "END:VCALENDAR",
         ].join("\r\n");
 
-        const ua = navigator.userAgent;
-        const isMobile = /android|iphone|ipad|ipod/i.test(ua);
+        const blob = new Blob([ics], { type: "text/calendar;charset=utf-8" });
+        const fileName = `duty-${member.name}.ics`;
+        const file = new File([blob], fileName, { type: "text/calendar" });
 
-        if (isMobile) {
-          // 모바일: webcal:// scheme → 브라우저/앱 종류 상관없이 캘린더 앱으로 직접 열림
+        const ua = navigator.userAgent;
+        const isIos = /iphone|ipad|ipod/i.test(ua);
+
+        if (navigator.canShare && navigator.canShare({ files: [file] })) {
+          // Android Chrome 등 Web Share API 지원 → 캘린더 앱으로 직접 공유
+          navigator.share({ files: [file], title: `듀티 - ${member.name}` })
+            .then(() => {
+              dom.exportCalStatus.textContent = `근무일 ${entries.length}개를 공유했어요.`;
+              setToast("캘린더 파일을 공유했어요!");
+            })
+            .catch((err) => {
+              if (err.name !== "AbortError") fallbackDownload();
+            });
+        } else if (isIos) {
+          // iOS (카카오톡 포함): webcal:// → OS가 캘린더 앱으로 직접 라우팅
           try {
             const encoded = btoa(unescape(encodeURIComponent(ics)))
               .replace(/\+/g, "-").replace(/\//g, "_").replace(/=/g, "");
@@ -1446,8 +1460,6 @@
         }
 
         function fallbackDownload() {
-          const blob = new Blob([ics], { type: "text/calendar;charset=utf-8" });
-          const fileName = `duty-${member.name}.ics`;
           const url = URL.createObjectURL(blob);
           const a = document.createElement("a");
           a.href = url;
