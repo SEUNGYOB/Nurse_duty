@@ -1455,26 +1455,22 @@
         }
 
         function tryWebcal() {
+          let encoded;
           try {
-            const encoded = btoa(unescape(encodeURIComponent(ics)))
+            encoded = btoa(unescape(encodeURIComponent(ics)))
               .replace(/\+/g, "-").replace(/\//g, "_").replace(/=/g, "");
-            const host = window.location.host;
-            // Android: Intent URL로 구글 캘린더 앱 직접 호출
-            // iOS: webcal:// scheme
-            const calUrl = isAndroid
-              ? `intent://${host}/api/ics?d=${encoded}#Intent;scheme=webcal;package=com.google.android.calendar;action=android.intent.action.VIEW;end`
-              : `webcal://${host}/api/ics?d=${encoded}`;
-            const a = document.createElement("a");
-            a.href = calUrl;
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
           } catch (e) {
             fallbackDownload();
             return;
           }
+          // toast/status 먼저 표시 후 URL 이동 (URL 이동이 JS 실행 막을 수 있음)
           dom.exportCalStatus.textContent = `근무일 ${entries.length}개 · 캘린더에 추가해 주세요.`;
           setToast("캘린더 앱이 열려요!");
+          const host = window.location.host;
+          const calUrl = isAndroid
+            ? `intent://${host}/api/ics?d=${encoded}#Intent;scheme=webcal;package=com.google.android.calendar;action=android.intent.action.VIEW;end`
+            : `webcal://${host}/api/ics?d=${encoded}`;
+          setTimeout(() => { window.location.href = calUrl; }, 300);
         }
 
         function fallbackDownload() {
