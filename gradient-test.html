@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>그라데이션 비교</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Helvetica Neue", sans-serif;
+      background: #e0e0e0;
+      padding: 24px;
+      display: flex;
+      gap: 20px;
+      min-height: 100vh;
+    }
+
+    .card {
+      flex: 1;
+      border-radius: 32px;
+      overflow: hidden;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.18);
+      min-height: 600px;
+      display: flex;
+      flex-direction: column;
+      padding: 36px 28px;
+      position: relative;
+    }
+
+    /* 옵션 1: 보라 + 회색 + 살구 */
+    .g1 {
+      background:
+        radial-gradient(ellipse at top left, #EDE4FF 0%, transparent 55%),
+        radial-gradient(ellipse at bottom right, #FFCBA4 0%, transparent 50%),
+        radial-gradient(ellipse at center, #d8d8e8 0%, transparent 60%),
+        #F8F6FB;
+    }
+
+    /* 옵션 2: 보라 + 회색 + 핑크 */
+    .g2 {
+      background:
+        radial-gradient(ellipse at top left, #EDE4FF 0%, transparent 55%),
+        radial-gradient(ellipse at bottom right, #FFD6E8 0%, transparent 50%),
+        radial-gradient(ellipse at center, #d8d8e8 0%, transparent 60%),
+        #F8F6FB;
+    }
+
+    /* 옵션 3: 보라 + 회색 + 민트 */
+    .g3 {
+      background:
+        radial-gradient(ellipse at top left, #EDE4FF 0%, transparent 55%),
+        radial-gradient(ellipse at bottom right, #B8F0E8 0%, transparent 50%),
+        radial-gradient(ellipse at center, #d8d8e8 0%, transparent 60%),
+        #F8F6FB;
+    }
+
+    .label {
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: rgba(24,32,42,0.45);
+      margin-bottom: 48px;
+    }
+
+    .title {
+      font-size: 36px;
+      font-weight: 800;
+      letter-spacing: -0.03em;
+      line-height: 1.1;
+      color: #18202a;
+      margin-bottom: 16px;
+    }
+
+    .title em {
+      font-style: normal;
+    }
+
+    .g1 .title em { color: #C47B4A; }
+    .g2 .title em { color: #C45A80; }
+    .g3 .title em { color: #2A9E8C; }
+
+    .sub {
+      font-size: 15px;
+      color: #66707b;
+      line-height: 1.6;
+      margin-bottom: 32px;
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 14px 24px;
+      border-radius: 14px;
+      font-size: 15px;
+      font-weight: 600;
+      border: none;
+      cursor: pointer;
+      margin-bottom: 10px;
+    }
+
+    .btn-dark { background: #18202a; color: white; }
+    .btn-light {
+      background: rgba(255,255,255,0.5);
+      backdrop-filter: blur(10px);
+      color: #444;
+      border: 1px solid rgba(255,255,255,0.6);
+    }
+
+    .color-chips {
+      display: flex;
+      gap: 8px;
+      margin-top: auto;
+      padding-top: 32px;
+    }
+
+    .chip {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      border: 2px solid rgba(255,255,255,0.6);
+    }
+
+    .g1 .chip:nth-child(1) { background: #EDE4FF; }
+    .g1 .chip:nth-child(2) { background: #d8d8e8; }
+    .g1 .chip:nth-child(3) { background: #FFCBA4; }
+
+    .g2 .chip:nth-child(1) { background: #EDE4FF; }
+    .g2 .chip:nth-child(2) { background: #d8d8e8; }
+    .g2 .chip:nth-child(3) { background: #FFD6E8; }
+
+    .g3 .chip:nth-child(1) { background: #EDE4FF; }
+    .g3 .chip:nth-child(2) { background: #d8d8e8; }
+    .g3 .chip:nth-child(3) { background: #B8F0E8; }
+  </style>
+</head>
+<body>
+
+  <!-- 옵션 1: 살구 -->
+  <div class="card g1">
+    <div class="label">옵션 1 — 보라 + 회색 + 살구</div>
+    <h2 class="title">근무표 사진 한 장,<br>두 사람의<br><em>일정이 됩니다.</em></h2>
+    <p class="sub">사진만 찍으면 자동으로 입력돼요.<br>상대방과 함께 보는 달력.</p>
+    <button class="btn btn-dark">지금 시작하기</button>
+    <button class="btn btn-light">어떻게 작동하나요?</button>
+    <div class="color-chips">
+      <div class="chip"></div>
+      <div class="chip"></div>
+      <div class="chip"></div>
+    </div>
+  </div>
+
+  <!-- 옵션 2: 핑크 -->
+  <div class="card g2">
+    <div class="label">옵션 2 — 보라 + 회색 + 핑크</div>
+    <h2 class="title">근무표 사진 한 장,<br>두 사람의<br><em>일정이 됩니다.</em></h2>
+    <p class="sub">사진만 찍으면 자동으로 입력돼요.<br>상대방과 함께 보는 달력.</p>
+    <button class="btn btn-dark">지금 시작하기</button>
+    <button class="btn btn-light">어떻게 작동하나요?</button>
+    <div class="color-chips">
+      <div class="chip"></div>
+      <div class="chip"></div>
+      <div class="chip"></div>
+    </div>
+  </div>
+
+  <!-- 옵션 3: 민트 -->
+  <div class="card g3">
+    <div class="label">옵션 3 — 보라 + 회색 + 민트</div>
+    <h2 class="title">근무표 사진 한 장,<br>두 사람의<br><em>일정이 됩니다.</em></h2>
+    <p class="sub">사진만 찍으면 자동으로 입력돼요.<br>상대방과 함께 보는 달력.</p>
+    <button class="btn btn-dark">지금 시작하기</button>
+    <button class="btn btn-light">어떻게 작동하나요?</button>
+    <div class="color-chips">
+      <div class="chip"></div>
+      <div class="chip"></div>
+      <div class="chip"></div>
+    </div>
+  </div>
+
+</body>
+</html>

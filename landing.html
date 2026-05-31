@@ -4,18 +4,6 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Nurse Couple</title>
-  <link rel="manifest" href="/manifest.json" />
-  <meta name="theme-color" content="#1c7c7a" />
-  <meta name="apple-mobile-web-app-capable" content="yes" />
-  <meta name="apple-mobile-web-app-status-bar-style" content="default" />
-  <meta name="apple-mobile-web-app-title" content="Nurse Couple" />
-  <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png" />
-  <script>
-    // PWA로 설치된 경우 바로 앱으로 이동
-    if (window.matchMedia("(display-mode: standalone)").matches || navigator.standalone) {
-      window.location.replace("/app.html");
-    }
-  </script>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
 
@@ -296,6 +284,9 @@
         <a href="./app.html" class="btn-cta">
           📅 지금 시작하기
         </a>
+        <a href="#how" class="btn-secondary">
+          어떻게 작동하나요?
+        </a>
       </div>
 
       <!-- OCR 기능 강조 카드 -->
@@ -330,6 +321,7 @@
       <div class="feature-card">
         <div class="feature-label">근무 유형</div>
         <div class="feature-title">한눈에 보이는 듀티</div>
+        <p class="feature-desc">Day · Evening · Night · OFF 색상으로 구분해요.</p>
         <div class="duty-preview">
           <span class="duty-badge day">Day</span>
           <span class="duty-badge eve">Evening</span>

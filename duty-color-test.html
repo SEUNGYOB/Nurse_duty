@@ -1,0 +1,412 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Nurse Couple - 근무 카드 색감 비교</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Helvetica Neue", sans-serif;
+      padding: 20px;
+      background: #f0f0f0;
+    }
+
+    .container {
+      max-width: 1400px;
+      margin: 0 auto;
+    }
+
+    h1 {
+      text-align: center;
+      margin-bottom: 40px;
+      font-size: 28px;
+      color: #333;
+    }
+
+    .comparison {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 30px;
+      margin-bottom: 40px;
+    }
+
+    .version {
+      background: white;
+      border-radius: 16px;
+      overflow: hidden;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    }
+
+    .version-header {
+      padding: 20px;
+      background: #333;
+      color: white;
+      font-weight: 600;
+      font-size: 16px;
+    }
+
+    .preview {
+      padding: 20px;
+      min-height: 600px;
+    }
+
+    /* 옵션 1: 팔레트 9 배경 + 구분 잘 되는 듀티 색 */
+    .option-1 {
+      --bg: #F8F6FB;
+      --bg-alt: #F3EFFF;
+      --ink: #18202a;
+      --day: #FFD166;
+      --evening: #F4A261;
+      --night: #2A4E7C;
+      --off: #C4B5D4;
+    }
+
+    /* 옵션 2: 밝은 배경 + 팔레트 1 듀티 색 */
+    .option-2 {
+      --bg: #FBF8F4;
+      --bg-alt: #FEE8CE;
+      --ink: #18202a;
+      --day: #FCE4B6;
+      --evening: #E8956F;
+      --night: #D46A6A;
+      --off: #D4C5B9;
+    }
+
+    .preview {
+      background: linear-gradient(180deg, var(--bg) 0%, var(--bg-alt) 100%);
+      color: var(--ink);
+    }
+
+    /* 달력 카드 */
+    .calendar-preview {
+      margin-top: 20px;
+    }
+
+    .calendar-header {
+      font-size: 14px;
+      font-weight: 600;
+      margin-bottom: 12px;
+      color: var(--ink);
+    }
+
+    .week {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 6px;
+      margin-bottom: 12px;
+    }
+
+    .day-header {
+      text-align: center;
+      font-size: 11px;
+      font-weight: 600;
+      color: #999;
+      padding: 4px;
+    }
+
+    .date-card {
+      aspect-ratio: 1;
+      border-radius: 8px;
+      padding: 4px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      font-size: 11px;
+      font-weight: 600;
+      background: white;
+      border: 1px solid rgba(0,0,0,0.08);
+      position: relative;
+    }
+
+    .date-card.day {
+      background: var(--day);
+      color: #333;
+    }
+
+    .date-card.evening {
+      background: var(--evening);
+      color: white;
+    }
+
+    .date-card.night {
+      background: var(--night);
+      color: white;
+    }
+
+    .date-card.off {
+      background: var(--off);
+      color: #333;
+    }
+
+    .date-label {
+      font-size: 9px;
+    }
+
+    .date-type {
+      font-size: 9px;
+      margin-top: 1px;
+      opacity: 0.8;
+    }
+
+    /* 카드 스타일 */
+    .card {
+      background: white;
+      border-radius: 12px;
+      padding: 16px;
+      margin-bottom: 12px;
+      border: 1px solid rgba(0,0,0,0.08);
+    }
+
+    .section-title {
+      font-weight: 600;
+      font-size: 14px;
+      margin-bottom: 10px;
+      color: var(--ink);
+    }
+
+    .btn-primary {
+      background: var(--evening);
+      color: white;
+      border: none;
+      padding: 10px 14px;
+      border-radius: 8px;
+      font-weight: 500;
+      cursor: pointer;
+      width: 100%;
+      margin-top: 8px;
+    }
+
+    .color-legend {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 8px;
+      margin-bottom: 16px;
+    }
+
+    .color-item {
+      text-align: center;
+      padding: 8px;
+      border-radius: 8px;
+      font-size: 12px;
+      font-weight: 600;
+    }
+
+    .color-item.day {
+      background: var(--day);
+      color: #333;
+    }
+
+    .color-item.evening {
+      background: var(--evening);
+      color: white;
+    }
+
+    .color-item.night {
+      background: var(--night);
+      color: white;
+    }
+
+    .color-item.off {
+      background: var(--off);
+      color: #333;
+    }
+
+    @media (max-width: 1200px) {
+      .comparison {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>🎨 Nurse Couple - 근무 카드 색감 비교</h1>
+
+    <div class="comparison">
+      <!-- 옵션 1 -->
+      <div class="version">
+        <div class="version-header">✨ 옵션 1: 팔레트 9 배경 + 구분 잘 되는 듀티 색</div>
+        <div class="preview option-1">
+          <div class="card">
+            <div class="section-title">색감 레전드</div>
+            <div class="color-legend">
+              <div class="color-item day">Day</div>
+              <div class="color-item evening">Eve</div>
+              <div class="color-item night">Night</div>
+              <div class="color-item off">OFF</div>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="section-title">5월 달력</div>
+            <div class="calendar-preview">
+              <div class="calendar-header">2026년 5월</div>
+              <div class="week">
+                <div class="day-header">SUN</div>
+                <div class="day-header">MON</div>
+                <div class="day-header">TUE</div>
+                <div class="day-header">WED</div>
+                <div class="day-header">THU</div>
+                <div class="day-header">FRI</div>
+                <div class="day-header">SAT</div>
+              </div>
+              <div class="week">
+                <div></div>
+                <div></div>
+                <div></div>
+                <div></div>
+                <div></div>
+                <div class="date-card day">
+                  <span class="date-label">1</span>
+                  <span class="date-type">Day</span>
+                </div>
+                <div class="date-card evening">
+                  <span class="date-label">2</span>
+                  <span class="date-type">Eve</span>
+                </div>
+              </div>
+              <div class="week">
+                <div class="date-card night">
+                  <span class="date-label">3</span>
+                  <span class="date-type">Night</span>
+                </div>
+                <div class="date-card off">
+                  <span class="date-label">4</span>
+                  <span class="date-type">OFF</span>
+                </div>
+                <div class="date-card day">
+                  <span class="date-label">5</span>
+                  <span class="date-type">Day</span>
+                </div>
+                <div class="date-card evening">
+                  <span class="date-label">6</span>
+                  <span class="date-type">Eve</span>
+                </div>
+                <div class="date-card night">
+                  <span class="date-label">7</span>
+                  <span class="date-type">Night</span>
+                </div>
+                <div class="date-card off">
+                  <span class="date-label">8</span>
+                  <span class="date-type">OFF</span>
+                </div>
+                <div class="date-card day">
+                  <span class="date-label">9</span>
+                  <span class="date-type">Day</span>
+                </div>
+              </div>
+              <div class="week">
+                <div class="date-card evening">
+                  <span class="date-label">10</span>
+                  <span class="date-type">Eve</span>
+                </div>
+                <div class="date-card night">
+                  <span class="date-label">11</span>
+                  <span class="date-type">Night</span>
+                </div>
+                <div class="date-card off">
+                  <span class="date-label">12</span>
+                  <span class="date-type">OFF</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 옵션 2 -->
+      <div class="version">
+        <div class="version-header">🌟 옵션 2: 밝은 배경 + 팔레트 1 듀티 색</div>
+        <div class="preview option-2">
+          <div class="card">
+            <div class="section-title">색감 레전드</div>
+            <div class="color-legend">
+              <div class="color-item day">Day</div>
+              <div class="color-item evening">Eve</div>
+              <div class="color-item night">Night</div>
+              <div class="color-item off">OFF</div>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="section-title">5월 달력</div>
+            <div class="calendar-preview">
+              <div class="calendar-header">2026년 5월</div>
+              <div class="week">
+                <div class="day-header">SUN</div>
+                <div class="day-header">MON</div>
+                <div class="day-header">TUE</div>
+                <div class="day-header">WED</div>
+                <div class="day-header">THU</div>
+                <div class="day-header">FRI</div>
+                <div class="day-header">SAT</div>
+              </div>
+              <div class="week">
+                <div></div>
+                <div></div>
+                <div></div>
+                <div></div>
+                <div></div>
+                <div class="date-card day">
+                  <span class="date-label">1</span>
+                  <span class="date-type">Day</span>
+                </div>
+                <div class="date-card evening">
+                  <span class="date-label">2</span>
+                  <span class="date-type">Eve</span>
+                </div>
+              </div>
+              <div class="week">
+                <div class="date-card night">
+                  <span class="date-label">3</span>
+                  <span class="date-type">Night</span>
+                </div>
+                <div class="date-card off">
+                  <span class="date-label">4</span>
+                  <span class="date-type">OFF</span>
+                </div>
+                <div class="date-card day">
+                  <span class="date-label">5</span>
+                  <span class="date-type">Day</span>
+                </div>
+                <div class="date-card evening">
+                  <span class="date-label">6</span>
+                  <span class="date-type">Eve</span>
+                </div>
+                <div class="date-card night">
+                  <span class="date-label">7</span>
+                  <span class="date-type">Night</span>
+                </div>
+                <div class="date-card off">
+                  <span class="date-label">8</span>
+                  <span class="date-type">OFF</span>
+                </div>
+                <div class="date-card day">
+                  <span class="date-label">9</span>
+                  <span class="date-type">Day</span>
+                </div>
+              </div>
+              <div class="week">
+                <div class="date-card evening">
+                  <span class="date-label">10</span>
+                  <span class="date-type">Eve</span>
+                </div>
+                <div class="date-card night">
+                  <span class="date-label">11</span>
+                  <span class="date-type">Night</span>
+                </div>
+                <div class="date-card off">
+                  <span class="date-label">12</span>
+                  <span class="date-type">OFF</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

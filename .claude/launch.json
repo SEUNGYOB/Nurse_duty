@@ -5,7 +5,8 @@
       "name": "nurse-duty",
       "runtimeExecutable": ".venv/bin/python",
       "runtimeArgs": ["server.py"],
-      "port": 3000,
+      "port": 5000,
+      "autoPort": true,
       "env": {
         "DOTENV_PATH": ".env"
       }

@@ -1,0 +1,809 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Nurse Couple - 색감 시안</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Helvetica Neue", sans-serif;
+      padding: 20px;
+      background: #f0f0f0;
+    }
+
+    .container {
+      max-width: 1400px;
+      margin: 0 auto;
+    }
+
+    h1 {
+      text-align: center;
+      margin-bottom: 40px;
+      font-size: 28px;
+      color: #333;
+    }
+
+    .palette-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+      gap: 30px;
+      margin-bottom: 40px;
+    }
+
+    .palette-section {
+      border-radius: 16px;
+      overflow: hidden;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    }
+
+    .palette-header {
+      padding: 16px;
+      background: #fff;
+      border-bottom: 1px solid #eee;
+      font-weight: 600;
+      font-size: 14px;
+      color: #666;
+    }
+
+    .palette-preview {
+      padding: 20px;
+      min-height: 500px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    /* CSS 변수를 사용한 색감 정의 */
+    .palette-1 {
+      --bg-light: #F5EBE0;
+      --primary: #FCE4B6;
+      --accent: #E8956F;
+      --dark: #D46A6A;
+      --text-primary: #1a1a1a;
+      --text-secondary: #666;
+      --border: rgba(0,0,0,0.08);
+    }
+
+    .palette-2 {
+      --bg-light: #E8F4F8;
+      --primary: #B8E6F5;
+      --accent: #6DD4E8;
+      --dark: #4BB8D4;
+      --text-primary: #1a1a1a;
+      --text-secondary: #666;
+      --border: rgba(0,0,0,0.08);
+    }
+
+    .palette-3 {
+      --bg-light: #F3EFFF;
+      --primary: #E6D9FF;
+      --accent: #D4B3FF;
+      --dark: #B58FD9;
+      --text-primary: #1a1a1a;
+      --text-secondary: #666;
+      --border: rgba(0,0,0,0.08);
+    }
+
+    .palette-4 {
+      --bg-light: #FFE8F0;
+      --primary: #FFD1E3;
+      --accent: #FFB3D9;
+      --dark: #FF99CC;
+      --text-primary: #1a1a1a;
+      --text-secondary: #666;
+      --border: rgba(0,0,0,0.08);
+    }
+
+    /* 1번 변형들 */
+    .palette-5 {
+      --bg-light: #F9F0E8;
+      --primary: #F5D4A0;
+      --accent: #D67B52;
+      --dark: #A85C4A;
+      --text-primary: #1a1a1a;
+      --text-secondary: #666;
+      --border: rgba(0,0,0,0.08);
+    }
+
+    .palette-6 {
+      --bg-light: #FBF8F4;
+      --primary: #FEE8CE;
+      --accent: #F0A483;
+      --dark: #E68575;
+      --text-primary: #1a1a1a;
+      --text-secondary: #666;
+      --border: rgba(0,0,0,0.08);
+    }
+
+    .palette-7 {
+      --bg-light: #F8EFE5;
+      --primary: #E8B88C;
+      --accent: #C9704F;
+      --dark: #9B5541;
+      --text-primary: #1a1a1a;
+      --text-secondary: #666;
+      --border: rgba(0,0,0,0.08);
+    }
+
+    /* 3번 변형들 */
+    .palette-8 {
+      --bg-light: #F1EAF8;
+      --primary: #D9C9F0;
+      --accent: #B894D9;
+      --dark: #8B6FA8;
+      --text-primary: #1a1a1a;
+      --text-secondary: #666;
+      --border: rgba(0,0,0,0.08);
+    }
+
+    .palette-9 {
+      --bg-light: #F8F6FB;
+      --primary: #EDE4FF;
+      --accent: #D7BFFF;
+      --dark: #A794C4;
+      --text-primary: #1a1a1a;
+      --text-secondary: #666;
+      --border: rgba(0,0,0,0.08);
+    }
+
+    .palette-10 {
+      --bg-light: #EFE6FA;
+      --primary: #D1BAEE;
+      --accent: #A67FD9;
+      --dark: #6E5BA8;
+      --text-primary: #1a1a1a;
+      --text-secondary: #666;
+      --border: rgba(0,0,0,0.08);
+    }
+
+    .palette-preview {
+      background: var(--bg-light);
+    }
+
+    /* 카드 스타일 */
+    .card {
+      background: white;
+      border-radius: 12px;
+      padding: 16px;
+      border: 1px solid var(--border);
+    }
+
+    .section-title {
+      font-weight: 600;
+      font-size: 15px;
+      margin-bottom: 12px;
+      color: var(--text-primary);
+    }
+
+    .tutorial-step {
+      display: flex;
+      gap: 12px;
+      align-items: flex-start;
+    }
+
+    .tutorial-num {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 32px;
+      height: 32px;
+      background: linear-gradient(135deg, var(--primary), var(--accent));
+      border-radius: 8px;
+      color: white;
+      font-weight: 600;
+      font-size: 14px;
+      flex-shrink: 0;
+    }
+
+    .tutorial-step strong {
+      font-size: 14px;
+      color: var(--text-primary);
+    }
+
+    .tutorial-step .subtitle {
+      font-size: 12px;
+      color: var(--text-secondary);
+      margin-top: 2px;
+    }
+
+    .btn {
+      padding: 10px 14px;
+      border: none;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s;
+      width: 100%;
+      text-align: center;
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, var(--primary), var(--accent));
+      color: white;
+      margin-bottom: 8px;
+    }
+
+    .btn-primary:hover {
+      opacity: 0.9;
+      transform: translateY(-1px);
+    }
+
+    .member-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 10px;
+      background: var(--bg-light);
+      border-radius: 8px;
+      font-size: 14px;
+      color: var(--text-primary);
+    }
+
+    .member-color {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      margin-right: 8px;
+    }
+
+    .subtitle {
+      font-size: 12px;
+      color: var(--text-secondary);
+      margin: 12px 0;
+    }
+
+    /* 색감 샘플 박스 */
+    .color-samples {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 8px;
+      margin-top: 12px;
+    }
+
+    .color-box {
+      aspect-ratio: 1;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 11px;
+      font-weight: 600;
+      color: white;
+      text-shadow: 0 1px 2px rgba(0,0,0,0.2);
+    }
+
+    .color-box.primary {
+      background: var(--primary);
+    }
+
+    .color-box.accent {
+      background: var(--accent);
+    }
+
+    .color-box.dark {
+      background: var(--dark);
+    }
+
+    .color-box.gradient {
+      background: linear-gradient(135deg, var(--primary), var(--accent), var(--dark));
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>🎨 Nurse Couple - 색감 시안</h1>
+
+    <div class="palette-grid">
+      <!-- 팔레트 1: 노랑→오렌지→분홍 (6번 기반) -->
+      <div class="palette-section">
+        <div class="palette-header">✨ 팔레트 1: 따뜻한 톤 (6번)</div>
+        <div class="palette-preview palette-1">
+          <div class="card">
+            <div class="section-title">사용법</div>
+            <div style="display: flex; flex-direction: column; gap: 10px;">
+              <div class="tutorial-step">
+                <div class="tutorial-num">1</div>
+                <div>
+                  <strong>이름 추가</strong>
+                  <div class="subtitle">아래 입력창에 이름을 쓰고 추가해요.</div>
+                </div>
+              </div>
+              <div class="tutorial-step">
+                <div class="tutorial-num">2</div>
+                <div>
+                  <strong>근무표 사진으로 자동 입력</strong>
+                  <div class="subtitle">가져오기 탭에서 근무표 사진을 올려요.</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="section-title">Team</div>
+            <div class="subtitle">팀 멤버 목록</div>
+            <div style="display: flex; flex-direction: column; gap: 8px;">
+              <div class="member-item">
+                <span>👩‍⚕️ 지은</span>
+                <span style="color: var(--accent);">●</span>
+              </div>
+              <div class="member-item">
+                <span>👨‍⚕️ 현우</span>
+                <span style="color: var(--dark);">●</span>
+              </div>
+            </div>
+            <button class="btn btn-primary">추가하기</button>
+          </div>
+
+          <div class="card">
+            <div class="section-title">색감 샘플</div>
+            <div class="color-samples">
+              <div class="color-box primary">Primary</div>
+              <div class="color-box accent">Accent</div>
+              <div class="color-box dark">Dark</div>
+              <div class="color-box gradient">Gradient</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 팔레트 2: 민트→청록 -->
+      <div class="palette-section">
+        <div class="palette-header">🌊 팔레트 2: 신선한 톤</div>
+        <div class="palette-preview palette-2">
+          <div class="card">
+            <div class="section-title">사용법</div>
+            <div style="display: flex; flex-direction: column; gap: 10px;">
+              <div class="tutorial-step">
+                <div class="tutorial-num">1</div>
+                <div>
+                  <strong>이름 추가</strong>
+                  <div class="subtitle">아래 입력창에 이름을 쓰고 추가해요.</div>
+                </div>
+              </div>
+              <div class="tutorial-step">
+                <div class="tutorial-num">2</div>
+                <div>
+                  <strong>근무표 사진으로 자동 입력</strong>
+                  <div class="subtitle">가져오기 탭에서 근무표 사진을 올려요.</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="section-title">Team</div>
+            <div class="subtitle">팀 멤버 목록</div>
+            <div style="display: flex; flex-direction: column; gap: 8px;">
+              <div class="member-item">
+                <span>👩‍⚕️ 지은</span>
+                <span style="color: var(--accent);">●</span>
+              </div>
+              <div class="member-item">
+                <span>👨‍⚕️ 현우</span>
+                <span style="color: var(--dark);">●</span>
+              </div>
+            </div>
+            <button class="btn btn-primary">추가하기</button>
+          </div>
+
+          <div class="card">
+            <div class="section-title">색감 샘플</div>
+            <div class="color-samples">
+              <div class="color-box primary">Primary</div>
+              <div class="color-box accent">Accent</div>
+              <div class="color-box dark">Dark</div>
+              <div class="color-box gradient">Gradient</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 팔레트 3: 라벤더→보라 -->
+      <div class="palette-section">
+        <div class="palette-header">💜 팔레트 3: 우아한 톤</div>
+        <div class="palette-preview palette-3">
+          <div class="card">
+            <div class="section-title">사용법</div>
+            <div style="display: flex; flex-direction: column; gap: 10px;">
+              <div class="tutorial-step">
+                <div class="tutorial-num">1</div>
+                <div>
+                  <strong>이름 추가</strong>
+                  <div class="subtitle">아래 입력창에 이름을 쓰고 추가해요.</div>
+                </div>
+              </div>
+              <div class="tutorial-step">
+                <div class="tutorial-num">2</div>
+                <div>
+                  <strong>근무표 사진으로 자동 입력</strong>
+                  <div class="subtitle">가져오기 탭에서 근무표 사진을 올려요.</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="section-title">Team</div>
+            <div class="subtitle">팀 멤버 목록</div>
+            <div style="display: flex; flex-direction: column; gap: 8px;">
+              <div class="member-item">
+                <span>👩‍⚕️ 지은</span>
+                <span style="color: var(--accent);">●</span>
+              </div>
+              <div class="member-item">
+                <span>👨‍⚕️ 현우</span>
+                <span style="color: var(--dark);">●</span>
+              </div>
+            </div>
+            <button class="btn btn-primary">추가하기</button>
+          </div>
+
+          <div class="card">
+            <div class="section-title">색감 샘플</div>
+            <div class="color-samples">
+              <div class="color-box primary">Primary</div>
+              <div class="color-box accent">Accent</div>
+              <div class="color-box dark">Dark</div>
+              <div class="color-box gradient">Gradient</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 팔레트 4: 핑크→복숭아 -->
+      <div class="palette-section">
+        <div class="palette-header">🍑 팔레트 4: 부드러운 톤</div>
+        <div class="palette-preview palette-4">
+          <div class="card">
+            <div class="section-title">사용법</div>
+            <div style="display: flex; flex-direction: column; gap: 10px;">
+              <div class="tutorial-step">
+                <div class="tutorial-num">1</div>
+                <div>
+                  <strong>이름 추가</strong>
+                  <div class="subtitle">아래 입력창에 이름을 쓰고 추가해요.</div>
+                </div>
+              </div>
+              <div class="tutorial-step">
+                <div class="tutorial-num">2</div>
+                <div>
+                  <strong>근무표 사진으로 자동 입력</strong>
+                  <div class="subtitle">가져오기 탭에서 근무표 사진을 올려요.</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="section-title">Team</div>
+            <div class="subtitle">팀 멤버 목록</div>
+            <div style="display: flex; flex-direction: column; gap: 8px;">
+              <div class="member-item">
+                <span>👩‍⚕️ 지은</span>
+                <span style="color: var(--accent);">●</span>
+              </div>
+              <div class="member-item">
+                <span>👨‍⚕️ 현우</span>
+                <span style="color: var(--dark);">●</span>
+              </div>
+            </div>
+            <button class="btn btn-primary">추가하기</button>
+          </div>
+
+          <div class="card">
+            <div class="section-title">색감 샘플</div>
+            <div class="color-samples">
+              <div class="color-box primary">Primary</div>
+              <div class="color-box accent">Accent</div>
+              <div class="color-box dark">Dark</div>
+              <div class="color-box gradient">Gradient</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 팔레트 5: 따뜻한 톤 (깊은) -->
+      <div class="palette-section">
+        <div class="palette-header">🔥 팔레트 5: 따뜻한 톤 - 깊은 변형</div>
+        <div class="palette-preview palette-5">
+          <div class="card">
+            <div class="section-title">사용법</div>
+            <div style="display: flex; flex-direction: column; gap: 10px;">
+              <div class="tutorial-step">
+                <div class="tutorial-num">1</div>
+                <div>
+                  <strong>이름 추가</strong>
+                  <div class="subtitle">아래 입력창에 이름을 쓰고 추가해요.</div>
+                </div>
+              </div>
+              <div class="tutorial-step">
+                <div class="tutorial-num">2</div>
+                <div>
+                  <strong>근무표 사진으로 자동 입력</strong>
+                  <div class="subtitle">가져오기 탭에서 근무표 사진을 올려요.</div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="card">
+            <div class="section-title">Team</div>
+            <div class="subtitle">팀 멤버 목록</div>
+            <div style="display: flex; flex-direction: column; gap: 8px;">
+              <div class="member-item">
+                <span>👩‍⚕️ 지은</span>
+                <span style="color: var(--accent);">●</span>
+              </div>
+              <div class="member-item">
+                <span>👨‍⚕️ 현우</span>
+                <span style="color: var(--dark);">●</span>
+              </div>
+            </div>
+            <button class="btn btn-primary">추가하기</button>
+          </div>
+          <div class="card">
+            <div class="section-title">색감 샘플</div>
+            <div class="color-samples">
+              <div class="color-box primary">Primary</div>
+              <div class="color-box accent">Accent</div>
+              <div class="color-box dark">Dark</div>
+              <div class="color-box gradient">Gradient</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 팔레트 6: 따뜻한 톤 (매우 밝음) -->
+      <div class="palette-section">
+        <div class="palette-header">✨ 팔레트 6: 따뜻한 톤 - 매우 밝은 변형</div>
+        <div class="palette-preview palette-6">
+          <div class="card">
+            <div class="section-title">사용법</div>
+            <div style="display: flex; flex-direction: column; gap: 10px;">
+              <div class="tutorial-step">
+                <div class="tutorial-num">1</div>
+                <div>
+                  <strong>이름 추가</strong>
+                  <div class="subtitle">아래 입력창에 이름을 쓰고 추가해요.</div>
+                </div>
+              </div>
+              <div class="tutorial-step">
+                <div class="tutorial-num">2</div>
+                <div>
+                  <strong>근무표 사진으로 자동 입력</strong>
+                  <div class="subtitle">가져오기 탭에서 근무표 사진을 올려요.</div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="card">
+            <div class="section-title">Team</div>
+            <div class="subtitle">팀 멤버 목록</div>
+            <div style="display: flex; flex-direction: column; gap: 8px;">
+              <div class="member-item">
+                <span>👩‍⚕️ 지은</span>
+                <span style="color: var(--accent);">●</span>
+              </div>
+              <div class="member-item">
+                <span>👨‍⚕️ 현우</span>
+                <span style="color: var(--dark);">●</span>
+              </div>
+            </div>
+            <button class="btn btn-primary">추가하기</button>
+          </div>
+          <div class="card">
+            <div class="section-title">색감 샘플</div>
+            <div class="color-samples">
+              <div class="color-box primary">Primary</div>
+              <div class="color-box accent">Accent</div>
+              <div class="color-box dark">Dark</div>
+              <div class="color-box gradient">Gradient</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 팔레트 7: 따뜻한 톤 (고급스러운) -->
+      <div class="palette-section">
+        <div class="palette-header">🌟 팔레트 7: 따뜨한 톤 - 고급 변형</div>
+        <div class="palette-preview palette-7">
+          <div class="card">
+            <div class="section-title">사용법</div>
+            <div style="display: flex; flex-direction: column; gap: 10px;">
+              <div class="tutorial-step">
+                <div class="tutorial-num">1</div>
+                <div>
+                  <strong>이름 추가</strong>
+                  <div class="subtitle">아래 입력창에 이름을 쓰고 추가해요.</div>
+                </div>
+              </div>
+              <div class="tutorial-step">
+                <div class="tutorial-num">2</div>
+                <div>
+                  <strong>근무표 사진으로 자동 입력</strong>
+                  <div class="subtitle">가져오기 탭에서 근무표 사진을 올려요.</div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="card">
+            <div class="section-title">Team</div>
+            <div class="subtitle">팀 멤버 목록</div>
+            <div style="display: flex; flex-direction: column; gap: 8px;">
+              <div class="member-item">
+                <span>👩‍⚕️ 지은</span>
+                <span style="color: var(--accent);">●</span>
+              </div>
+              <div class="member-item">
+                <span>👨‍⚕️ 현우</span>
+                <span style="color: var(--dark);">●</span>
+              </div>
+            </div>
+            <button class="btn btn-primary">추가하기</button>
+          </div>
+          <div class="card">
+            <div class="section-title">색감 샘플</div>
+            <div class="color-samples">
+              <div class="color-box primary">Primary</div>
+              <div class="color-box accent">Accent</div>
+              <div class="color-box dark">Dark</div>
+              <div class="color-box gradient">Gradient</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 팔레트 8: 보라 톤 (깊은) -->
+      <div class="palette-section">
+        <div class="palette-header">💎 팔레트 8: 보라 톤 - 깊은 변형</div>
+        <div class="palette-preview palette-8">
+          <div class="card">
+            <div class="section-title">사용법</div>
+            <div style="display: flex; flex-direction: column; gap: 10px;">
+              <div class="tutorial-step">
+                <div class="tutorial-num">1</div>
+                <div>
+                  <strong>이름 추가</strong>
+                  <div class="subtitle">아래 입력창에 이름을 쓰고 추가해요.</div>
+                </div>
+              </div>
+              <div class="tutorial-step">
+                <div class="tutorial-num">2</div>
+                <div>
+                  <strong>근무표 사진으로 자동 입력</strong>
+                  <div class="subtitle">가져오기 탭에서 근무표 사진을 올려요.</div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="card">
+            <div class="section-title">Team</div>
+            <div class="subtitle">팀 멤버 목록</div>
+            <div style="display: flex; flex-direction: column; gap: 8px;">
+              <div class="member-item">
+                <span>👩‍⚕️ 지은</span>
+                <span style="color: var(--accent);">●</span>
+              </div>
+              <div class="member-item">
+                <span>👨‍⚕️ 현우</span>
+                <span style="color: var(--dark);">●</span>
+              </div>
+            </div>
+            <button class="btn btn-primary">추가하기</button>
+          </div>
+          <div class="card">
+            <div class="section-title">색감 샘플</div>
+            <div class="color-samples">
+              <div class="color-box primary">Primary</div>
+              <div class="color-box accent">Accent</div>
+              <div class="color-box dark">Dark</div>
+              <div class="color-box gradient">Gradient</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 팔레트 9: 보라 톤 (매우 밝음) -->
+      <div class="palette-section">
+        <div class="palette-header">☁️ 팔레트 9: 보라 톤 - 매우 밝은 변형</div>
+        <div class="palette-preview palette-9">
+          <div class="card">
+            <div class="section-title">사용법</div>
+            <div style="display: flex; flex-direction: column; gap: 10px;">
+              <div class="tutorial-step">
+                <div class="tutorial-num">1</div>
+                <div>
+                  <strong>이름 추가</strong>
+                  <div class="subtitle">아래 입력창에 이름을 쓰고 추가해요.</div>
+                </div>
+              </div>
+              <div class="tutorial-step">
+                <div class="tutorial-num">2</div>
+                <div>
+                  <strong>근무표 사진으로 자동 입력</strong>
+                  <div class="subtitle">가져오기 탭에서 근무표 사진을 올려요.</div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="card">
+            <div class="section-title">Team</div>
+            <div class="subtitle">팀 멤버 목록</div>
+            <div style="display: flex; flex-direction: column; gap: 8px;">
+              <div class="member-item">
+                <span>👩‍⚕️ 지은</span>
+                <span style="color: var(--accent);">●</span>
+              </div>
+              <div class="member-item">
+                <span>👨‍⚕️ 현우</span>
+                <span style="color: var(--dark);">●</span>
+              </div>
+            </div>
+            <button class="btn btn-primary">추가하기</button>
+          </div>
+          <div class="card">
+            <div class="section-title">색감 샘플</div>
+            <div class="color-samples">
+              <div class="color-box primary">Primary</div>
+              <div class="color-box accent">Accent</div>
+              <div class="color-box dark">Dark</div>
+              <div class="color-box gradient">Gradient</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 팔레트 10: 보라 톤 (고급스러운) -->
+      <div class="palette-section">
+        <div class="palette-header">👑 팔레트 10: 보라 톤 - 고급 변형</div>
+        <div class="palette-preview palette-10">
+          <div class="card">
+            <div class="section-title">사용법</div>
+            <div style="display: flex; flex-direction: column; gap: 10px;">
+              <div class="tutorial-step">
+                <div class="tutorial-num">1</div>
+                <div>
+                  <strong>이름 추가</strong>
+                  <div class="subtitle">아래 입력창에 이름을 쓰고 추가해요.</div>
+                </div>
+              </div>
+              <div class="tutorial-step">
+                <div class="tutorial-num">2</div>
+                <div>
+                  <strong>근무표 사진으로 자동 입력</strong>
+                  <div class="subtitle">가져오기 탭에서 근무표 사진을 올려요.</div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="card">
+            <div class="section-title">Team</div>
+            <div class="subtitle">팀 멤버 목록</div>
+            <div style="display: flex; flex-direction: column; gap: 8px;">
+              <div class="member-item">
+                <span>👩‍⚕️ 지은</span>
+                <span style="color: var(--accent);">●</span>
+              </div>
+              <div class="member-item">
+                <span>👨‍⚕️ 현우</span>
+                <span style="color: var(--dark);">●</span>
+              </div>
+            </div>
+            <button class="btn btn-primary">추가하기</button>
+          </div>
+          <div class="card">
+            <div class="section-title">색감 샘플</div>
+            <div class="color-samples">
+              <div class="color-box primary">Primary</div>
+              <div class="color-box accent">Accent</div>
+              <div class="color-box dark">Dark</div>
+              <div class="color-box gradient">Gradient</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</body>
+</html>
