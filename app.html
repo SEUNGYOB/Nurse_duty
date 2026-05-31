@@ -1210,6 +1210,12 @@
               }
             });
 
+            // main 달력 숨기기 (설정 탭에서는 필요 없음)
+            const mainContent = document.getElementById("mainContent");
+            if (mainContent) {
+              mainContent.style.display = "none";
+            }
+
             // 2. 설치 관련 FAQ 찾아서 펼치기
             setTimeout(() => {
               const faqItems = document.querySelectorAll(".faq-item");
@@ -1437,6 +1443,11 @@
         // 패널 콘텐츠 교체
         document.querySelectorAll(".pane").forEach(p =>
           p.classList.toggle("is-active", p.dataset.pane === tab));
+        // 달력(main)은 home 탭일 때만 보이기
+        const mainContent = document.getElementById("mainContent");
+        if (mainContent) {
+          mainContent.style.display = tab === "home" ? "block" : "none";
+        }
         // shell 클래스로 모바일 표시 제어 (CSS가 처리)
         shellEl.className = shellEl.className.replace(/\btab-\w+\b/g, "").trim();
         shellEl.classList.add(`tab-${tab}`);
