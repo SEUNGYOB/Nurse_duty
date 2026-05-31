@@ -1296,7 +1296,7 @@
         if (e.key === "Enter") joinWithCode();
       });
 
-      dom.exportCalBtn.addEventListener("click", () => { alert("버튼 클릭됨"); exportCalendar(); });
+      dom.exportCalBtn.addEventListener("click", exportCalendar);
 
       // ── 아이콘 레일 탭 전환 ──────────────────────────────────────────────
       const shellEl = document.querySelector(".shell");
