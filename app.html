@@ -1544,7 +1544,7 @@
           const res = await fetch("/api/share", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ row_index: state.members.indexOf(member) + 1, shifts, code: existingCode }),
+            body: JSON.stringify({ row_index: state.members.indexOf(member) + 1, shifts: { ...shifts, __name__: member.name }, code: existingCode }),
           });
           const data = await res.json();
           if (!res.ok) { dom.shareStatus.textContent = data.error ?? "오류가 발생했어요."; return; }
@@ -1575,16 +1575,17 @@
           if (!res.ok) { dom.shareStatus.textContent = data.error ?? "오류가 발생했어요."; return; }
 
           const partnerShifts = data.shifts;
+          const partnerName = partnerShifts.__name__ ?? "상대방";
+          delete partnerShifts.__name__;
 
-          // 이름 없이 슬롯에 듀티만 적용 (이름은 로컬에서 관리)
-          // 이미 "상대방" 슬롯이 있으면 재사용 (activeMemberId와 무관하게)
           let partner = state.members.find((m) => m.name === "상대방")
                      ?? state.members.find((m) => m.id !== state.activeMemberId);
           if (!partner && state.members.length < MAX_MEMBERS) {
-            partner = { id: crypto.randomUUID(), name: "상대방" };
+            partner = { id: crypto.randomUUID(), name: partnerName };
             state.members.push(partner);
           }
           if (partner) {
+            partner.name = partnerName;
             state.shiftsByMember[partner.id] = partnerShifts;
           }
 
