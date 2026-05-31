@@ -6,11 +6,15 @@ import urllib.request
 import urllib.error
 
 from flask import Flask, jsonify, request
+from api._rate_limit import check as rate_check
 
 app = Flask(__name__)
 
 ALPHABET = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"  # 헷갈리는 O/0/I/1 제외
+ALPHABET_SET = set(ALPHABET)
 CODE_LEN = 6
+MAX_SHIFTS_BYTES = 50_000  # ~50KB
+ROW_INDEX_MIN, ROW_INDEX_MAX = 1, 16
 
 
 def _supabase_headers():
@@ -57,6 +61,9 @@ def create_room():
     if not os.environ.get("SUPABASE_URL") or not os.environ.get("SUPABASE_SERVICE_KEY"):
         return jsonify({"error": "서버 설정이 완료되지 않았어요."}), 503
 
+    if not rate_check(request, "share-post", limit=20):
+        return jsonify({"error": "요청이 너무 많습니다. 잠시 후 다시 시도해주세요."}), 429
+
     body = request.get_json(force=True, silent=True) or {}
     row_index = body.get("row_index")
     shifts = body.get("shifts")
@@ -64,6 +71,15 @@ def create_room():
 
     if not isinstance(row_index, int) or not isinstance(shifts, dict):
         return jsonify({"error": "row_index(int)와 shifts가 필요합니다."}), 400
+
+    if not (ROW_INDEX_MIN <= row_index <= ROW_INDEX_MAX):
+        return jsonify({"error": f"row_index는 {ROW_INDEX_MIN}~{ROW_INDEX_MAX} 범위여야 합니다."}), 400
+
+    if len(json.dumps(shifts, ensure_ascii=False).encode()) > MAX_SHIFTS_BYTES:
+        return jsonify({"error": "shifts 데이터가 너무 큽니다."}), 413
+
+    if existing_code and (len(existing_code) != CODE_LEN or not all(c in ALPHABET_SET for c in existing_code)):
+        return jsonify({"error": "잘못된 코드 형식입니다."}), 400
 
     # 기존 코드가 있으면 그대로 upsert, 없으면 새 코드 생성
     code = existing_code or "".join(secrets.choice(ALPHABET) for _ in range(CODE_LEN))

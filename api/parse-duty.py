@@ -13,12 +13,23 @@ from werkzeug.exceptions import RequestEntityTooLarge
 
 MAX_UPLOAD_MB = 10
 
+ALLOWED_MIME = {"image/jpeg", "image/png", "image/webp", "image/heic", "image/heif"}
+
 app = Flask(__name__)
 app.config["MAX_CONTENT_LENGTH"] = MAX_UPLOAD_MB * 1024 * 1024
 
 
 def _sse(type_: str, **kwargs) -> str:
     return f"data: {json.dumps({'type': type_, **kwargs}, ensure_ascii=False)}\n\n"
+
+
+def _is_image(data: bytes) -> bool:
+    return (
+        data[:3] == b"\xff\xd8\xff"              # JPEG
+        or data[:4] == b"\x89PNG"                # PNG
+        or (data[:4] == b"RIFF" and data[8:12] == b"WEBP")  # WebP
+        or data[4:8] == b"ftyp"                  # HEIC/HEIF
+    )
 
 
 @app.errorhandler(RequestEntityTooLarge)
@@ -29,9 +40,13 @@ def _too_large(_e):
 @app.route("/api/parse-duty", methods=["POST"])
 @app.route("/", methods=["POST"])
 def parse_duty():
+    from api._rate_limit import check as rate_check
     from ocr.claude_parser import parse_duty_image_with_claude
     from ocr.duty_parser import parse_duty_image_bytes
     from ocr.training_store import save_sample as save_training_sample
+
+    if not rate_check(request, "parse-duty", limit=5):
+        return jsonify({"error": "요청이 너무 많습니다. 잠시 후 다시 시도해주세요."}), 429
 
     if "file" not in request.files:
         return jsonify({"error": "사진 파일을 찾지 못했어요."}), 400
@@ -40,8 +55,14 @@ def parse_duty():
     if not upload.filename:
         return jsonify({"error": "사진 파일을 찾지 못했어요."}), 400
 
+    if upload.mimetype not in ALLOWED_MIME:
+        return jsonify({"error": "이미지 파일만 허용합니다 (JPEG, PNG, WebP, HEIC)."}), 415
+
     payload = upload.read()
     filename = upload.filename
+
+    if not _is_image(payload):
+        return jsonify({"error": "이미지 파일만 허용합니다 (JPEG, PNG, WebP, HEIC)."}), 415
 
     row_index = None
     raw_row = request.form.get("rowIndex")
