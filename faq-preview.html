@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>FAQ 미리보기</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Helvetica Neue", sans-serif;
+      background: #F8F6FB;
+      padding: 20px;
+      color: #18202a;
+    }
+    .faq-item {
+      background: white;
+      border-radius: 12px;
+      padding: 16px;
+      margin-bottom: 16px;
+      box-shadow: 0 2px 8px rgba(167, 148, 196, 0.1);
+    }
+    .faq-q {
+      font-weight: 600;
+      font-size: 15px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .faq-q::before {
+      content: "▶";
+      font-size: 12px;
+      transition: transform 0.2s;
+    }
+    .faq-item[open] .faq-q::before {
+      transform: rotate(90deg);
+    }
+    .faq-a {
+      margin-top: 12px;
+      line-height: 1.6;
+      font-size: 14px;
+      color: #666;
+    }
+    strong {
+      color: #1c7c7a;
+      font-weight: 600;
+    }
+    br { margin: 4px 0; display: block; }
+    .container {
+      max-width: 500px;
+      margin: 0 auto;
+    }
+    h1 {
+      font-size: 20px;
+      margin-bottom: 20px;
+      text-align: center;
+    }
+  </style>
+</head>
+<body>
+
+<div class="container">
+  <h1>홈 화면에 앱으로 설치</h1>
+
+  <details class="faq-item" open>
+    <summary class="faq-q">홈 화면에 앱으로 설치하려면?</summary>
+    <div class="faq-a">
+      우측 상단의 <strong>"공유"</strong> 버튼(네 개의 점 또는 화살표 아이콘)을 누르세요.<br>
+      <strong>"view more"</strong>를 선택해서 더 많은 옵션을 확인하세요.<br>
+      <strong>"홈 화면에 추가"</strong>를 누르면 완료입니다.<br><br>
+
+      <strong>카카오톡·인스타그램·네이버에서 링크를 열었다면?</strong><br>
+      기본 브라우저인 Chrome으로 자동 이동합니다. 위의 과정을 따르면 됩니다.
+    </div>
+  </details>
+</div>
+
+</body>
+</html>
