@@ -1167,7 +1167,14 @@
 
         const ua = navigator.userAgent;
         const isIos = /iphone|ipad|ipod/i.test(ua);
+        const isAndroid = /android/i.test(ua);
         const isStandalone = window.matchMedia("(display-mode: standalone)").matches || navigator.standalone;
+
+        // iOS, Android만 지원 (macOS, 데스크탑은 제외)
+        if (!isIos && !isAndroid) {
+          banner.style.display = "none";
+          return;
+        }
 
         // 이미 설치됨 → 배너 숨김
         if (isStandalone) {
