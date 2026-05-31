@@ -1439,17 +1439,11 @@
         const isAndroid = /android/i.test(ua);
         const isMobile = isIos || isAndroid;
 
-        let canShareFile = false;
-        try { canShareFile = !!(navigator.canShare && navigator.canShare({ files: [file] })); } catch (e) {}
-
-        if (canShareFile) {
-          navigator.share({ files: [file], title: `듀티 - ${member.name}` })
-            .then(() => {
-              dom.exportCalStatus.textContent = `근무일 ${entries.length}개를 공유했어요.`;
-              setToast("캘린더 파일을 공유했어요!");
-            })
-            .catch((err) => { if (err.name !== "AbortError") tryWebcal(); });
-        } else if (isMobile) {
+        if (isIos) {
+          // iOS: webcal:// → OS가 캘린더 앱으로 직접 연결
+          tryWebcal();
+        } else if (isAndroid) {
+          // Android: webcal:// Intent URL → 구글 캘린더
           tryWebcal();
         } else {
           fallbackDownload();
