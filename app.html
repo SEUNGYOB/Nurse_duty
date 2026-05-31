@@ -1200,9 +1200,15 @@
         btn.addEventListener("click", async () => {
           if (isIos) {
             // iOS: 설정 탭으로 전환 후 설치 FAQ 펼치고 스크롤
-            // 1. 설정 탭 활성화
+            // 1. 모든 pane에서 is-active 제거, 설정 탭만 활성화
             const panes = document.querySelectorAll(".pane");
-            panes.forEach(p => p.classList.toggle("is-active", p.dataset.pane === "settings"));
+            panes.forEach(p => {
+              if (p.dataset.pane === "settings") {
+                p.classList.add("is-active");
+              } else {
+                p.classList.remove("is-active");
+              }
+            });
 
             // 2. 설치 관련 FAQ 찾아서 펼치기
             setTimeout(() => {
