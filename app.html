@@ -1199,16 +1199,25 @@
         // 설치 버튼
         btn.addEventListener("click", async () => {
           if (isIos) {
-            // iOS: 설정 탭으로 전환 후 FAQ로 스크롤
+            // iOS: 설정 탭으로 전환 후 설치 FAQ 펼치고 스크롤
             // 1. 설정 탭 활성화
             const panes = document.querySelectorAll(".pane");
             panes.forEach(p => p.classList.toggle("is-active", p.dataset.pane === "settings"));
 
-            // 2. FAQ 섹션으로 스크롤 (약간 딜레이 줘서 탭 전환 후 스크롤)
+            // 2. 설치 관련 FAQ 찾아서 펼치기
             setTimeout(() => {
-              const faqSection = document.getElementById("faq-section");
-              if (faqSection) {
-                faqSection.scrollIntoView({ behavior: "smooth", block: "start" });
+              const faqItems = document.querySelectorAll(".faq-item");
+              let installFaq = null;
+              for (const item of faqItems) {
+                const summary = item.querySelector(".faq-q");
+                if (summary && summary.textContent.includes("설치하려면")) {
+                  installFaq = item;
+                  break;
+                }
+              }
+              if (installFaq) {
+                installFaq.open = true;
+                installFaq.scrollIntoView({ behavior: "smooth", block: "start" });
               }
             }, 100);
           } else if (_pwaInstallPrompt) {
