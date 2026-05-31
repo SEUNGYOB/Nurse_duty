@@ -1500,6 +1500,15 @@
           setTimeout(() => {
             console.log("🎯 window.location.href 설정 중...");
             window.location.href = calUrl;
+            // Android intent:// 또는 webcal:// 실패 시 fallback (에뮬레이터/브라우저)
+            if (isAndroid || true) { // 모든 모바일에서 fallback 준비
+              setTimeout(() => {
+                console.log("⚠️ intent/webcal 실패 → HTTPS fallback으로 전환");
+                const httpsUrl = `https://${host}/api/ics?d=${encoded}`;
+                console.log("📥 HTTPS URL로 직접 호출:", httpsUrl.substring(0, 80) + "...");
+                window.location.href = httpsUrl;
+              }, 500);
+            }
           }, 300);
         }
 
