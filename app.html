@@ -1370,6 +1370,9 @@
       })();
 
       function exportCalendar() {
+        try { _exportCalendar(); } catch (err) { setToast("오류: " + err.message); }
+      }
+      function _exportCalendar() {
         const selectedId = dom.exportMemberSelect.value;
         const member = state.members.find(m => m.id === selectedId) ?? activeMember();
         if (!member) { setToast("팀원을 먼저 추가해 주세요."); return; }
