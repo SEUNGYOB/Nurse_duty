@@ -1200,7 +1200,11 @@
         btn.addEventListener("click", async () => {
           if (isIos) {
             // iOS: 설정 탭으로 전환 후 설치 FAQ 펼치고 스크롤
-            // 1. 모든 pane에서 is-active 제거, 설정 탭만 활성화
+            // 1. 탭 버튼 활성화
+            document.querySelectorAll(".rail-btn").forEach(b =>
+              b.classList.toggle("is-active", b.dataset.tab === "settings"));
+
+            // 2. pane 활성화
             const panes = document.querySelectorAll(".pane");
             panes.forEach(p => {
               if (p.dataset.pane === "settings") {
@@ -1210,7 +1214,7 @@
               }
             });
 
-            // main 달력 숨기기 (설정 탭에서는 필요 없음)
+            // 3. main 달력 숨기기
             const mainContent = document.getElementById("mainContent");
             if (mainContent) {
               mainContent.style.display = "none";
