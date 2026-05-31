@@ -1405,9 +1405,17 @@
         }
 
         console.log("📝 ICS 이벤트 생성 중... entries:", entries.length);
+        console.log("🔍 times 객체:", times);
+        console.log("🔍 DEFAULT_SHIFT_TIMES 객체:", DEFAULT_SHIFT_TIMES);
         const events = entries.map(([dateStr, shift]) => {
+          console.log(`  └─ 처리 중: ${dateStr} = ${shift}`);
           const [y, m, d] = dateStr.split("-").map(Number);
-          const { start, end } = times[shift] ?? DEFAULT_SHIFT_TIMES[shift];
+          const shiftConfig = times[shift] ?? DEFAULT_SHIFT_TIMES[shift];
+          if (!shiftConfig) {
+            console.error(`  ❌ shift '${shift}' 못 찾음! times[${shift}]:`, times[shift], "| DEFAULT[${shift}]:", DEFAULT_SHIFT_TIMES[shift]);
+            throw new Error(`shift '${shift}' 설정 없음`);
+          }
+          const { start, end } = shiftConfig;
           const [sh, sm] = start.split(":").map(Number);
           const [eh, em] = end.split(":").map(Number);
 
