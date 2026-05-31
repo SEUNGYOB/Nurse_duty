@@ -1432,19 +1432,26 @@
 
         const ua = navigator.userAgent;
         const isIos = /iphone|ipad|ipod/i.test(ua);
+        const isMobile = isIos || /android/i.test(ua);
 
         if (navigator.canShare && navigator.canShare({ files: [file] })) {
-          // Android Chrome 등 Web Share API 지원 → 캘린더 앱으로 직접 공유
+          // Web Share API 지원 + text/calendar 허용 → 공유 시트
           navigator.share({ files: [file], title: `듀티 - ${member.name}` })
             .then(() => {
               dom.exportCalStatus.textContent = `근무일 ${entries.length}개를 공유했어요.`;
               setToast("캘린더 파일을 공유했어요!");
             })
             .catch((err) => {
-              if (err.name !== "AbortError") fallbackDownload();
+              if (err.name !== "AbortError") tryWebcal();
             });
-        } else if (isIos) {
-          // iOS (카카오톡 포함): webcal:// → OS가 캘린더 앱으로 직접 라우팅
+        } else if (isMobile) {
+          tryWebcal();
+        } else {
+          fallbackDownload();
+        }
+
+        function tryWebcal() {
+          // iOS/Android: webcal:// → OS가 캘린더 앱으로 직접 라우팅 (브라우저 무관)
           try {
             const encoded = btoa(unescape(encodeURIComponent(ics)))
               .replace(/\+/g, "-").replace(/\//g, "_").replace(/=/g, "");
@@ -1455,8 +1462,6 @@
           } catch (e) {
             fallbackDownload();
           }
-        } else {
-          fallbackDownload();
         }
 
         function fallbackDownload() {
