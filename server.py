@@ -8,7 +8,7 @@ import threading
 from pathlib import Path
 
 from dotenv import load_dotenv
-from flask import Flask, Response, jsonify, request, send_file, stream_with_context
+from flask import Flask, Response, jsonify, request, send_file, send_from_directory, stream_with_context
 from flask_cors import CORS
 from werkzeug.exceptions import RequestEntityTooLarge
 
@@ -56,10 +56,37 @@ def health():
     return jsonify({"status": "ok"})
 
 
+@app.get("/api/ics")
+def serve_ics():
+    import base64
+    data = request.args.get("d", "")
+    if not data:
+        return jsonify({"error": "데이터 없음"}), 400
+    padded = data.replace("-", "+").replace("_", "/")
+    padded += "=" * (4 - len(padded) % 4)
+    try:
+        ics_content = base64.b64decode(padded).decode("utf-8")
+    except Exception:
+        return jsonify({"error": "잘못된 데이터"}), 400
+    return Response(
+        ics_content,
+        mimetype="text/calendar",
+        headers={"Content-Disposition": "inline; filename=duty.ics"},
+    )
+
+
 @app.get("/")
 @app.get("/index.html")
 def index():
     return send_file(ROOT / "index.html")
+
+
+@app.get("/<path:filename>")
+def serve_static(filename):
+    file_path = ROOT / filename
+    if file_path.exists() and file_path.is_file():
+        return send_from_directory(ROOT, filename)
+    return jsonify({"error": "파일을 찾을 수 없습니다."}), 404
 
 
 @app.post("/api/parse-duty")

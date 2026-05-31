@@ -1426,48 +1426,37 @@
           "END:VCALENDAR",
         ].join("\r\n");
 
-        const blob = new Blob([ics], { type: "text/calendar;charset=utf-8" });
-        const fileName = `duty-${member.name}.ics`;
-        const file = new File([blob], fileName, { type: "text/calendar" });
-
         const ua = navigator.userAgent;
-        const isIos = /iphone|ipad|ipod/i.test(ua);
-        const isIosSafari = isIos && /Version\//i.test(ua) &&
-          !/KAKAOTALK|Instagram|NAVER|CriOS|FxiOS|OPiOS|EdgiOS/i.test(ua);
+        const isMobile = /android|iphone|ipad|ipod/i.test(ua);
 
-        if (isIosSafari) {
-          // iOS Safari: data URI로 캘린더 앱 직접 오픈
-          const dataUri = "data:text/calendar;charset=utf-8," + encodeURIComponent(ics);
-          window.location.href = dataUri;
-          dom.exportCalStatus.textContent = `근무일 ${entries.length}개 · 캘린더에 추가해 주세요.`;
-          setToast("캘린더 앱이 열려요!");
-        } else if (navigator.canShare && navigator.canShare({ files: [file] })) {
-          // Android Chrome 등 — Web Share API
-          navigator.share({ files: [file], title: `듀티 - ${member.name}` })
-            .then(() => {
-              dom.exportCalStatus.textContent = `근무일 ${entries.length}개를 공유했어요.`;
-              setToast("캘린더 파일을 공유했어요!");
-            })
-            .catch((err) => {
-              if (err.name !== "AbortError") fallbackDownload();
-            });
+        if (isMobile) {
+          // 모바일: webcal:// scheme → 브라우저/앱 종류 상관없이 캘린더 앱으로 직접 열림
+          try {
+            const encoded = btoa(unescape(encodeURIComponent(ics)))
+              .replace(/\+/g, "-").replace(/\//g, "_").replace(/=/g, "");
+            const webcalUrl = `webcal://${window.location.host}/api/ics?d=${encoded}`;
+            window.location.href = webcalUrl;
+            dom.exportCalStatus.textContent = `근무일 ${entries.length}개 · 캘린더에 추가해 주세요.`;
+            setToast("캘린더 앱이 열려요!");
+          } catch (e) {
+            fallbackDownload();
+          }
         } else {
           fallbackDownload();
         }
 
         function fallbackDownload() {
+          const blob = new Blob([ics], { type: "text/calendar;charset=utf-8" });
+          const fileName = `duty-${member.name}.ics`;
           const url = URL.createObjectURL(blob);
           const a = document.createElement("a");
           a.href = url;
           a.download = fileName;
           a.click();
           URL.revokeObjectURL(url);
-
-          // 다운로드 후 Google Calendar 임포트 페이지 열기
           setTimeout(() => {
             window.open("https://calendar.google.com/calendar/u/0/r/import", "_blank");
           }, 500);
-
           dom.exportCalStatus.textContent = `근무일 ${entries.length}개를 저장했어요.`;
           setToast("파일 저장 후 구글 캘린더 임포트 페이지가 열려요!");
         }
