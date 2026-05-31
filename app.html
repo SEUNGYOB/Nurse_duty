@@ -926,6 +926,50 @@
             </section>
           </div>
 
+          <!-- 설치 배너 -->
+          <div id="installBanner" style="
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 100;
+            background: linear-gradient(135deg, #FFD166 0%, #FFB74D 100%);
+            padding: 12px 16px;
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            justify-content: space-between;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+          ">
+            <div style="flex: 1;">
+              <div style="font-weight: 600; font-size: 14px; color: #333; margin-bottom: 2px;">📥 앱으로 설치하기</div>
+              <div style="font-size: 12px; color: #666;">홈 화면에서 빠르게 접근하세요</div>
+            </div>
+            <button id="installBannerBtn" style="
+              background: white;
+              color: #FF9800;
+              border: none;
+              padding: 8px 16px;
+              border-radius: 6px;
+              font-weight: 600;
+              font-size: 13px;
+              cursor: pointer;
+              white-space: nowrap;
+            ">설치</button>
+            <button id="installBannerClose" style="
+              background: rgba(0,0,0,0.1);
+              border: none;
+              width: 28px;
+              height: 28px;
+              border-radius: 6px;
+              cursor: pointer;
+              display: flex;
+              align-items: center;
+              justify-content: center;
+              color: #333;
+              font-size: 16px;
+            ">×</button>
+          </div>
 
           <!-- 내보내기 패널: 공유 + 캘린더 내보내기 -->
           <div class="pane" data-pane="export">
@@ -1007,7 +1051,7 @@
             </div>
           </section>
 
-          <section class="card">
+          <section class="card" id="faq-section">
             <div class="section-title">자주 묻는 질문</div>
             <div style="display:grid;gap:0">
 
@@ -1108,7 +1152,63 @@
         _pwaInstallPrompt = e;
         const btn = document.getElementById("installPwaBtn");
         if (btn) btn.style.display = "";
+        // 새 배너 표시
+        const banner = document.getElementById("installBanner");
+        if (banner) banner.style.display = "flex";
       });
+
+      // 설치 배너 로직
+      (function initInstallBanner() {
+        const banner = document.getElementById("installBanner");
+        const btn = document.getElementById("installBannerBtn");
+        const closeBtn = document.getElementById("installBannerClose");
+
+        if (!banner || !btn || !closeBtn) return;
+
+        const ua = navigator.userAgent;
+        const isIos = /iphone|ipad|ipod/i.test(ua);
+        const isStandalone = window.matchMedia("(display-mode: standalone)").matches || navigator.standalone;
+
+        // 이미 설치됨 → 배너 숨김
+        if (isStandalone) {
+          banner.style.display = "none";
+          return;
+        }
+
+        // 로컬스토리지에서 배너 닫음 여부 확인
+        const closedKey = "nurse-shift:install-banner-closed";
+        if (localStorage.getItem(closedKey)) {
+          banner.style.display = "none";
+        } else {
+          banner.style.display = "flex";
+        }
+
+        // 닫기 버튼
+        closeBtn.addEventListener("click", () => {
+          banner.style.display = "none";
+          localStorage.setItem(closedKey, "true");
+        });
+
+        // 설치 버튼
+        btn.addEventListener("click", async () => {
+          if (isIos) {
+            // iOS: FAQ 섹션으로 스크롤
+            const faqSection = document.getElementById("faq-section");
+            if (faqSection) {
+              faqSection.scrollIntoView({ behavior: "smooth", block: "start" });
+            }
+          } else if (_pwaInstallPrompt) {
+            // Android: 설치 프롬프트
+            _pwaInstallPrompt.prompt();
+            const { outcome } = await _pwaInstallPrompt.userChoice;
+            if (outcome === "accepted") {
+              banner.style.display = "none";
+              localStorage.setItem(closedKey, "true");
+            }
+            _pwaInstallPrompt = null;
+          }
+        });
+      })();
 
       const STORAGE_KEY = "nurse-shift-board:v1";
       const SHIFT_LABELS = {
