@@ -2561,8 +2561,8 @@
               <p>${active ? escapeHtml(active.name) : "팀원 없음"}${activeShift ? ` · ${escapeHtml(SHIFT_LABELS[activeShift])}` : " · 미입력"}</p>
             </section>
           `,
-          handoverCardHtml("앞 교대자 (인수받는 사람)", handover ? handover.prev : null, false),
-          handoverCardHtml("뒷 교대자 (인계할 사람)", handover ? handover.next : null, true),
+          handoverCardHtml("앞 교대자 (나에게 인계해주는 사람)", handover ? handover.prev : null, false),
+          handoverCardHtml("뒷 교대자 (내가 인계할 사람)", handover ? handover.next : null, true),
         ].join("");
       }
 
