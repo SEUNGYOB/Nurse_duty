@@ -3,6 +3,7 @@ from __future__ import annotations
 import base64
 import io
 import json
+import os
 import subprocess
 import tempfile
 import shutil
@@ -19,15 +20,22 @@ _NAMES_FILE = Path(__file__).resolve().parent.parent / "names.json"
 _NAMES_EXAMPLE = Path(__file__).resolve().parent.parent / "names.example.json"
 
 def _load_row_names() -> list[str]:
+    # 우선순위: DUTY_ROW_NAMES 환경변수(JSON 배열) → names.json → names.example.json → 일반 이름
+    # 실명은 저장소에 올리지 않으므로 배포 환경에는 파일이 없을 수 있다 — 임포트가 죽으면 안 됨.
+    env_names = os.environ.get("DUTY_ROW_NAMES", "")
+    if env_names:
+        try:
+            data = json.loads(env_names)
+            if isinstance(data, list) and data:
+                return [str(n) for n in data]
+        except (ValueError, TypeError):
+            pass
     for candidate in (_NAMES_FILE, _NAMES_EXAMPLE):
         if candidate.exists():
             data = json.loads(candidate.read_text(encoding="utf-8"))
             if isinstance(data, list) and data:
                 return [str(n) for n in data]
-    raise FileNotFoundError(
-        "names.json 파일이 없습니다. names.example.json을 복사해서 실제 이름으로 채워주세요.\n"
-        f"  cp names.example.json names.json"
-    )
+    return [f"간호사{i}" for i in range(1, 17)]
 
 ROW_NAMES: list[str] = _load_row_names()
 
