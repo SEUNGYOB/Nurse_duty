@@ -44,7 +44,7 @@ DEFAULT_SHIFT_ALIAS_CONFIG = {
     "evening": ["E", "EVE", "EVENING", "이브닝"],
     "night": ["N", "NN", "NIGHT", "나이트"],
     "s": ["S"],
-    "annual": ["A", "ANNUAL", "연차"],
+    "annual": ["Y", "A", "ANNUAL", "연차"],
     "off": ["O", "OFF", "휴무"],
 }
 STATIC_ANTHROPIC_MODELS = (
