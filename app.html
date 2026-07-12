@@ -2553,6 +2553,27 @@
           ? `${active.name} · ${activeShift ? SHIFT_LABELS[activeShift] : "미입력"}`
           : "선택된 팀원이 없습니다.";
 
+        // 같이 근무: 같은 날 같은 시간대 근무자 (본인 제외)
+        let togetherHtml = "";
+        if (activeShift && !["off", "annual"].includes(activeShift)) {
+          const { workers } = findWorkersFor({ shift: activeShift, dayOffset: 0 });
+          const myName = active ? active.name : "";
+          // 팀원명("주희")과 표 실명("김주희")이 달라도 본인은 빼기
+          const others = workers.filter((w) =>
+            !(myName && (w.name === myName || w.name.includes(myName) || myName.includes(w.name)))
+          );
+          togetherHtml = `
+            <section class="shift-flow-card">
+              <h4>같이 근무하는 사람 (${escapeHtml(SHIFT_LABELS[activeShift])})</h4>
+              ${
+                others.length
+                  ? `<div class="shift-flow-list">${others.map((w) => `<span class="shift-flow-pill">${escapeHtml(w.name)}<small>${escapeHtml(SHIFT_LABELS[activeShift])}</small></span>`).join("")}</div>`
+                  : `<p>같은 시간대 근무자 정보가 없어요.</p>`
+              }
+            </section>
+          `;
+        }
+
         dom.shiftFlowContent.innerHTML = [
           rosterHtml,
           `
@@ -2561,6 +2582,7 @@
               <p>${active ? escapeHtml(active.name) : "팀원 없음"}${activeShift ? ` · ${escapeHtml(SHIFT_LABELS[activeShift])}` : " · 미입력"}</p>
             </section>
           `,
+          togetherHtml,
           handoverCardHtml("앞 교대자 (나에게 인계해주는 사람)", handover ? handover.prev : null, false),
           handoverCardHtml("뒷 교대자 (내가 인계할 사람)", handover ? handover.next : null, true),
         ].join("");
