@@ -2537,17 +2537,6 @@
           return `<section class="shift-flow-card"><h4>${title}</h4>${body}</section>`;
         }
 
-        const ocrRoster = getOcrDayRoster(date);
-        let rosterHtml = "";
-        if (ocrRoster) {
-          const pills = ocrRoster.map(function(w) {
-            const mapped = OCR_TO_SHIFT[w.shift] || w.shift;
-            const label = SHIFT_LABELS[mapped] || w.shift;
-            return "<span class=\"shift-flow-pill\">" + escapeHtml(w.name) + "<small>" + escapeHtml(label) + "</small></span>";
-          }).join("");
-          rosterHtml = "<section class=\"shift-flow-card\"><h4>오늘 전체 근무 (표 기준)</h4><div class=\"shift-flow-list\">" + pills + "</div></section>";
-        }
-
         dom.shiftFlowTitle.textContent = formatFullDate(date);
         dom.shiftFlowSubtitle.textContent = active
           ? `${active.name} · ${activeShift ? SHIFT_LABELS[activeShift] : "미입력"}`
@@ -2575,13 +2564,6 @@
         }
 
         dom.shiftFlowContent.innerHTML = [
-          rosterHtml,
-          `
-            <section class="shift-flow-card">
-              <h4>선택한 근무</h4>
-              <p>${active ? escapeHtml(active.name) : "팀원 없음"}${activeShift ? ` · ${escapeHtml(SHIFT_LABELS[activeShift])}` : " · 미입력"}</p>
-            </section>
-          `,
           togetherHtml,
           handoverCardHtml("앞 교대자 (나에게 인계해주는 사람)", handover ? handover.prev : null, false),
           handoverCardHtml("뒷 교대자 (내가 인계할 사람)", handover ? handover.next : null, true),
