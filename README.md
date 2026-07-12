@@ -41,6 +41,7 @@ python -m py_compile ocr/claude_parser.py ocr/duty_parser.py server.py
 ## 문서
 
 - [배포 가이드](docs/deployment.md) — launchd, HTTPS, Vercel 연결
+- [Anthropic 모델 유지보수](docs/model-maintenance.md) — 모델명 점검과 갱신 체크리스트
 - [현재 상태](STATUS.md)
 - [OCR 시도/실패/결론 기록](claude_ocr_findings.md)
 

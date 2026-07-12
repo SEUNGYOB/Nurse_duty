@@ -1,0 +1,15 @@
+.DS_Store
+.venv/
+.pycache/
+__pycache__/
+scratch/
+samples/
+design/
+memory/
+tests/
+docs/
+SECURITY_REPORT.md
+TODO.md
+STATUS.md
+claude_ocr_findings.md
+names.example.json

@@ -9,3 +9,5 @@ credentials/
 memory/
 samples/
 names.json
+.env*
+tests/ocr_speed/

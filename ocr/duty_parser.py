@@ -328,6 +328,30 @@ def build_schedule_boxes(template: DutySheetTemplate) -> list[dict]:
     return rows
 
 
+def correct_bounds_outliers(bounds: list[int], sigma_threshold: float = 2.0) -> list[int]:
+    """선형 피팅 잔차 기반으로 이상치 경계점을 교정한다.
+
+    전체 감지된 점들에 1차 선형 모델(a + i*b)을 피팅한 뒤,
+    잔차가 sigma_threshold × std 를 넘는 내부 점을 피팅값으로 교체한다.
+    첫 번째와 마지막 점은 고정한다.
+    """
+    if len(bounds) < 4:
+        return bounds
+    indices = np.arange(len(bounds), dtype=float)
+    raw = np.array(bounds, dtype=float)
+    coeffs = np.polyfit(indices, raw, 1)
+    fitted = np.polyval(coeffs, indices)
+    residuals = raw - fitted
+    std = float(residuals.std())
+    if std < 1e-6:
+        return bounds
+    corrected = list(bounds)
+    for i in range(1, len(bounds) - 1):
+        if abs(residuals[i]) > sigma_threshold * std:
+            corrected[i] = int(round(float(fitted[i])))
+    return corrected
+
+
 def detect_profile_boundaries(
     scores: np.ndarray,
     expected_positions: list[int],
@@ -417,6 +441,7 @@ def detect_schedule_line_bounds(
 
     y_bounds = detect_profile_boundaries(horiz_scores, expected_y, radius=22, min_ratio=0.18)
     x_bounds = detect_profile_boundaries(vert_scores, expected_x, radius=18, min_ratio=0.15)
+    x_bounds = correct_bounds_outliers(x_bounds)
     return schedule, y_bounds, x_bounds
 
 

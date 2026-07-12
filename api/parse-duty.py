@@ -1,4 +1,3 @@
-import json
 import queue
 import sys
 import threading
@@ -11,6 +10,8 @@ if str(ROOT) not in sys.path:
 from flask import Flask, Response, jsonify, request, stream_with_context
 from werkzeug.exceptions import RequestEntityTooLarge
 
+from ocr.request_params import parse_ocr_request_context
+
 MAX_UPLOAD_MB = 10
 
 ALLOWED_MIME = {"image/jpeg", "image/png", "image/webp", "image/heic", "image/heif"}
@@ -20,6 +21,8 @@ app.config["MAX_CONTENT_LENGTH"] = MAX_UPLOAD_MB * 1024 * 1024
 
 
 def _sse(type_: str, **kwargs) -> str:
+    import json
+
     return f"data: {json.dumps({'type': type_, **kwargs}, ensure_ascii=False)}\n\n"
 
 
@@ -30,7 +33,6 @@ def _is_image(data: bytes) -> bool:
         or (data[:4] == b"RIFF" and data[8:12] == b"WEBP")  # WebP
         or data[4:8] == b"ftyp"                  # HEIC/HEIF
     )
-
 
 @app.errorhandler(RequestEntityTooLarge)
 def _too_large(_e):
@@ -64,31 +66,15 @@ def parse_duty():
     if not _is_image(payload):
         return jsonify({"error": "이미지 파일만 허용합니다 (JPEG, PNG, WebP, HEIC)."}), 415
 
-    row_index = None
-    raw_row = request.form.get("rowIndex")
-    if raw_row is not None:
-        try:
-            row_index = max(1, min(16, int(raw_row)))
-        except (TypeError, ValueError):
-            pass
-
-    year = month = None
-    try:
-        raw_year = request.form.get("year")
-        if raw_year:
-            year = max(2020, min(2099, int(raw_year)))
-    except (TypeError, ValueError):
-        pass
-    try:
-        raw_month = request.form.get("month")
-        if raw_month:
-            month = max(1, min(12, int(raw_month)))
-    except (TypeError, ValueError):
-        pass
+    ocr_context = parse_ocr_request_context(request.form)
+    row_index = ocr_context["row_index"]
+    year = ocr_context["year"]
+    month = ocr_context["month"]
 
     mode = request.form.get("mode", "claude").lower()
     if mode not in {"claude", "tesseract"}:
         mode = "claude"
+    shift_aliases = ocr_context["shift_aliases"]
 
     def generate():
         q: queue.Queue = queue.Queue()
@@ -103,6 +89,7 @@ def parse_duty():
                         payload, filename,
                         row_index=row_index,
                         year=year, month=month,
+                        shift_aliases=shift_aliases,
                         on_progress=on_progress,
                         on_training_data=save_training_sample,
                     )

@@ -77,6 +77,7 @@
 - [ ] App Store / Play Store 등록 (PWA → 네이티브 래퍼 고려)
 - [ ] Vercel cold start 최소화 (Fluid Compute 또는 keep-warm ping)
 - [ ] ANTHROPIC_API_KEY 사용량 모니터링
+- [ ] Anthropic 자동 모델 선택이 기대대로 작동하는지 월 1회 점검 및 [docs/model-maintenance.md](docs/model-maintenance.md) 기준 갱신
 
 ### 코드 정리
 - [ ] `tools/` 폴더 벤치마크 스크립트들 정리 (실험용 파일 다수)

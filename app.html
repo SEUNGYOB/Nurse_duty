@@ -625,6 +625,96 @@
       }
       .toast.visible { opacity: 1; }
 
+      .shift-flow-modal {
+        position: fixed;
+        inset: 0;
+        display: none;
+        align-items: center;
+        justify-content: center;
+        padding: 18px;
+        background: rgba(11, 16, 24, 0.46);
+        z-index: 10000;
+      }
+      .shift-flow-modal.is-open { display: flex; }
+      .shift-flow-dialog {
+        width: min(560px, 100%);
+        max-height: min(84vh, 760px);
+        overflow: auto;
+        padding: 18px;
+        border-radius: 22px;
+        border: 1px solid rgba(24, 32, 42, 0.08);
+        background: rgba(255, 255, 255, 0.96);
+        box-shadow: 0 28px 70px rgba(10, 16, 24, 0.26);
+      }
+      .shift-flow-head {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        gap: 14px;
+        margin-bottom: 14px;
+      }
+      .shift-flow-title {
+        margin: 0;
+        font-size: 22px;
+        letter-spacing: -0.04em;
+      }
+      .shift-flow-subtitle {
+        margin: 6px 0 0;
+        color: var(--muted);
+        font: 500 13px/1.5 system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      }
+      .shift-flow-close {
+        flex-shrink: 0;
+        width: 38px;
+        height: 38px;
+        border: 1px solid rgba(24, 32, 42, 0.08);
+        border-radius: 12px;
+        background: rgba(255, 255, 255, 0.92);
+        color: var(--muted);
+        cursor: pointer;
+        font: 700 20px/1 system-ui, sans-serif;
+      }
+      .shift-flow-sections {
+        display: grid;
+        gap: 12px;
+      }
+      .shift-flow-card {
+        padding: 14px;
+        border-radius: 18px;
+        background: rgba(248, 246, 251, 0.92);
+        border: 1px solid rgba(24, 32, 42, 0.08);
+      }
+      .shift-flow-card h4 {
+        margin: 0 0 8px;
+        font: 800 13px/1.2 system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        color: var(--muted);
+        text-transform: uppercase;
+        letter-spacing: 0.12em;
+      }
+      .shift-flow-card p {
+        margin: 0;
+        font: 600 15px/1.55 system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        color: var(--ink);
+      }
+      .shift-flow-list {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+      }
+      .shift-flow-pill {
+        padding: 7px 10px;
+        border-radius: 999px;
+        background: rgba(255, 255, 255, 0.95);
+        border: 1px solid rgba(24, 32, 42, 0.08);
+        color: var(--ink);
+        font: 700 12px/1 system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      }
+      .shift-flow-pill small {
+        margin-left: 6px;
+        color: var(--muted);
+        font-weight: 600;
+      }
+
       .empty {
         padding: 18px;
         border: 1px dashed rgba(24, 32, 42, 0.16);
@@ -675,6 +765,63 @@
         padding: 0 0 14px;
         font: 500 13px/1.7 system-ui, -apple-system, sans-serif;
         color: var(--muted);
+      }
+
+      .alias-member-grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 8px;
+        margin-bottom: 14px;
+      }
+
+      .alias-member-card {
+        padding: 12px;
+        border-radius: 16px;
+        border: 1px solid rgba(24, 32, 42, 0.08);
+        background: rgba(255, 255, 255, 0.76);
+        cursor: pointer;
+        text-align: left;
+        color: var(--ink);
+        transition: transform 0.15s ease, border-color 0.15s ease, background 0.15s ease;
+      }
+
+      .alias-member-card.is-active {
+        background: rgba(28, 124, 122, 0.1);
+        border-color: rgba(28, 124, 122, 0.42);
+      }
+
+      .alias-member-card strong,
+      .alias-member-card span {
+        display: block;
+      }
+
+      .alias-member-card strong {
+        font: 700 14px/1.2 system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        margin-bottom: 4px;
+      }
+
+      .alias-member-card span {
+        color: var(--muted);
+        font: 500 12px/1.4 system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      }
+
+      .alias-form {
+        display: grid;
+        gap: 10px;
+      }
+
+      .alias-row {
+        display: grid;
+        grid-template-columns: 78px minmax(0, 1fr);
+        gap: 10px;
+        align-items: center;
+      }
+
+      .alias-row label {
+        font: 700 12px/1.2 system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        color: var(--muted);
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
       }
 
 
@@ -1051,6 +1198,13 @@
             </div>
           </section>
 
+          <section class="card">
+            <div class="section-title">근무 문자열 설정</div>
+            <div class="subtle" style="margin-bottom:12px">각 멤버가 실제로 쓰는 듀티 문자열을 등록해 두세요. 한 번 저장하면 다음에도 그대로 기억해요.</div>
+            <div id="shiftAliasMembers" class="alias-member-grid"></div>
+            <div id="shiftAliasEditor" class="alias-form"></div>
+          </section>
+
           <section class="card" id="faq-section">
             <div class="section-title">자주 묻는 질문</div>
             <div style="display:grid;gap:0">
@@ -1157,6 +1311,21 @@
       </div>
     </div>
 
+    <div class="shift-flow-modal" id="shiftFlowModal" aria-hidden="true">
+      <div class="shift-flow-dialog" role="dialog" aria-modal="true" aria-labelledby="shiftFlowTitle">
+        <div class="shift-flow-head">
+          <div>
+            <p class="section-title">근무 흐름</p>
+            <h3 class="shift-flow-title" id="shiftFlowTitle">-</h3>
+            <p class="shift-flow-subtitle" id="shiftFlowSubtitle">-</p>
+          </div>
+          <button class="shift-flow-close" id="shiftFlowCloseBtn" type="button" aria-label="닫기">×</button>
+        </div>
+        <div class="shift-flow-sections" id="shiftFlowContent"></div>
+      </div>
+    </div>
+
+    <script src="./shift-aliases.js"></script>
     <script>
       // beforeinstallprompt는 매우 일찍 발생하므로 스크립트 최상단에서 캡쳐
       let _pwaInstallPrompt = null;
@@ -1175,6 +1344,7 @@
         const banner = document.getElementById("installBanner");
         const btn = document.getElementById("installBannerBtn");
         const closeBtn = document.getElementById("installBannerClose");
+        const bannerStorage = createStorage();
 
         if (!banner || !btn || !closeBtn) return;
 
@@ -1197,7 +1367,7 @@
 
         // 로컬스토리지에서 배너 닫음 여부 확인
         const closedKey = "nurse-shift:install-banner-closed";
-        if (localStorage.getItem(closedKey)) {
+        if (bannerStorage.getItem(closedKey)) {
           banner.style.display = "none";
         } else {
           banner.style.display = "flex";
@@ -1206,7 +1376,7 @@
         // 닫기 버튼
         closeBtn.addEventListener("click", () => {
           banner.style.display = "none";
-          localStorage.setItem(closedKey, "true");
+          bannerStorage.setItem(closedKey, "true");
         });
 
         // 설치 버튼
@@ -1255,7 +1425,7 @@
             const { outcome } = await _pwaInstallPrompt.userChoice;
             if (outcome === "accepted") {
               banner.style.display = "none";
-              localStorage.setItem(closedKey, "true");
+              bannerStorage.setItem(closedKey, "true");
             }
             _pwaInstallPrompt = null;
           }
@@ -1284,12 +1454,44 @@
       // OCR 코드(D/E/N/S/Y/off) → 프론트엔드 shift 키 변환
       const OCR_TO_SHIFT = {
         D: "day", E: "evening", N: "night",
-        S: "s", A: "annual",
+        S: "s", A: "annual", Y: "annual",
         off: "off", OFF: "off",
       };
       const WEEKDAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
       const MAX_MEMBERS = 2;
       const OCR_PREFS_KEY = "nurse-shift-board:ocr-prefs";
+      const API_ORIGIN = window.location.protocol === "file:" ? "http://localhost:3000" : window.location.origin;
+      const WORK_SHIFT_ORDER = ["day", "evening", "night"];
+      const SHIFT_ALIAS_UTILS = window.DutyShiftAliases ?? {
+        defaultAliasConfig() {
+          return {
+            day: ["D", "DAY", "데이"],
+            evening: ["E", "EVE", "EVENING", "이브닝"],
+            night: ["N", "NN", "NIGHT", "나이트"],
+            s: ["S"],
+            annual: ["A", "ANNUAL", "연차"],
+            off: ["O", "OFF", "휴무"],
+          };
+        },
+        normalizeAliasConfig(candidate) {
+          const base = this.defaultAliasConfig();
+          const next = {};
+          for (const key of Object.keys(base)) next[key] = base[key];
+          if (candidate && typeof candidate === "object") {
+            for (const key of Object.keys(base)) {
+              if (Array.isArray(candidate[key])) next[key] = [...new Set(candidate[key].map((v) => String(v).trim().toUpperCase()).filter(Boolean))];
+            }
+          }
+          return next;
+        },
+        parseAliasInput(value) {
+          return String(value || "")
+            .split(/[,\n]/)
+            .map((v) => v.trim().toUpperCase())
+            .filter(Boolean)
+            .filter((v, i, arr) => arr.indexOf(v) === i);
+        },
+      };
       const dom = {
         teamList: document.getElementById("teamList"),
         memberName: document.getElementById("memberName"),
@@ -1306,6 +1508,11 @@
         stats: document.getElementById("stats"),
         clearBtn: document.getElementById("clearBtn"),
         clearAllBtn: document.getElementById("clearAllBtn"),
+        shiftFlowModal: document.getElementById("shiftFlowModal"),
+        shiftFlowCloseBtn: document.getElementById("shiftFlowCloseBtn"),
+        shiftFlowTitle: document.getElementById("shiftFlowTitle"),
+        shiftFlowSubtitle: document.getElementById("shiftFlowSubtitle"),
+        shiftFlowContent: document.getElementById("shiftFlowContent"),
         ocrFileInput: document.getElementById("ocrFileInput"),
         ocrYearSelect: document.getElementById("ocrYearSelect"),
         ocrMonthSelect: document.getElementById("ocrMonthSelect"),
@@ -1343,7 +1550,13 @@
         timeNightEnd: document.getElementById("timeNightEnd"),
         timeSStart: document.getElementById("timeSStart"),
         timeSEnd: document.getElementById("timeSEnd"),
+        shiftAliasMembers: document.getElementById("shiftAliasMembers"),
+        shiftAliasEditor: document.getElementById("shiftAliasEditor"),
       };
+
+      function apiUrl(path) {
+        return `${API_ORIGIN}${path}`;
+      }
 
       const now = new Date();
       const storage = createStorage();
@@ -1357,6 +1570,8 @@
         currentYear: now.getFullYear(),
         selectedDate: isoDate(new Date(now.getFullYear(), now.getMonth(), now.getDate())),
         shiftsByMember: {},
+        shiftAliasesByMember: {},
+        shiftAliasMemberId: null,
       });
 
       if (!state.activeMemberId && state.members.length) {
@@ -1364,6 +1579,18 @@
       }
       if (!state.shiftsByMember) {
         state.shiftsByMember = {};
+      }
+      let shiftFlowDate = null;
+      let _ocrAllRows = null;
+
+      // OCR 전체 명단은 새로고침 후에도 인수인계(앞/뒤 교대자)에 쓰이도록 저장
+      const DUTY_ROSTER_KEY = "nurse-shift-board:duty-roster";
+      let _dutyRoster = (() => {
+        try { return JSON.parse(storage.getItem(DUTY_ROSTER_KEY)) ?? null; } catch { return null; }
+      })();
+      function saveDutyRoster(result) {
+        _dutyRoster = result;
+        try { storage.setItem(DUTY_ROSTER_KEY, JSON.stringify(result)); } catch { /* 저장 실패해도 동작엔 지장 없음 */ }
       }
       syncVisibleMonthToSelection();
 
@@ -1417,6 +1644,7 @@
       dom.todayBtn.addEventListener("click", goToToday);
       dom.clearBtn.addEventListener("click", () => {
         state.selectedDate = null;
+        closeShiftFlowModal();
         renderAll();
       });
       dom.clearAllBtn.addEventListener("click", clearAllShifts);
@@ -1434,6 +1662,13 @@
 
       dom.ocrRecognizeBtn.addEventListener("click", recognizeOcr);
       dom.ocrImportBtn.addEventListener("click", importFromOcr);
+      dom.shiftFlowCloseBtn.addEventListener("click", closeShiftFlowModal);
+      dom.shiftFlowModal.addEventListener("click", (event) => {
+        if (event.target === dom.shiftFlowModal) closeShiftFlowModal();
+      });
+      window.addEventListener("keydown", (event) => {
+        if (event.key === "Escape") closeShiftFlowModal();
+      });
 
       dom.shareCreateBtn.addEventListener("click", createShareCode);
       dom.shareCopyCodeBtn.addEventListener("click", () => {
@@ -1485,12 +1720,12 @@
       };
 
       function loadShiftTimes() {
-        try { return JSON.parse(localStorage.getItem(SHIFT_TIMES_KEY)) ?? { ...DEFAULT_SHIFT_TIMES }; }
+        try { return JSON.parse(storage.getItem(SHIFT_TIMES_KEY)) ?? { ...DEFAULT_SHIFT_TIMES }; }
         catch { return { ...DEFAULT_SHIFT_TIMES }; }
       }
 
       function saveShiftTimes() {
-        localStorage.setItem(SHIFT_TIMES_KEY, JSON.stringify({
+        storage.setItem(SHIFT_TIMES_KEY, JSON.stringify({
           day:     { start: dom.timeDayStart.value,     end: dom.timeDayEnd.value },
           evening: { start: dom.timeEveningStart.value, end: dom.timeEveningEnd.value },
           night:   { start: dom.timeNightStart.value,   end: dom.timeNightEnd.value },
@@ -1782,7 +2017,7 @@
         dom.shareCodeWrap.style.display = "none";
 
         try {
-          const res = await fetch("/api/share", {
+          const res = await fetch(apiUrl("/api/share"), {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ row_index: state.members.indexOf(member) + 1, shifts: { ...shifts, __name__: member.name }, code: existingCode }),
@@ -1811,7 +2046,7 @@
         dom.shareStatus.textContent = "불러오는 중...";
 
         try {
-          const res = await fetch(`/api/share?code=${encodeURIComponent(code)}`);
+          const res = await fetch(apiUrl(`/api/share?code=${encodeURIComponent(code)}`));
           const data = await res.json();
           if (!res.ok) { dom.shareStatus.textContent = data.error ?? "오류가 발생했어요."; return; }
 
@@ -1862,10 +2097,8 @@
         });
       }
 
-      let _ocrAllRows = null;
-
       async function _streamOcr(formData) {
-        const res = await fetch("/api/parse-duty", { method: "POST", body: formData });
+        const res = await fetch(apiUrl("/api/parse-duty"), { method: "POST", body: formData });
         if (!res.ok || !res.body) {
           const data = await res.json().catch(() => ({}));
           throw new Error(data.error ?? res.status);
@@ -1912,6 +2145,7 @@
       async function recognizeOcr() {
         const file = dom.ocrFileInput.files[0];
         if (!file) return;
+        const currentMember = activeMember();
 
         dom.ocrRecognizeBtn.disabled = true;
         dom.ocrImportBtn.disabled = true;
@@ -1942,6 +2176,9 @@
           formData.append("file", compressed, file.name);
           formData.append("year", dom.ocrYearSelect.value);
           formData.append("month", dom.ocrMonthSelect.value);
+          formData.append("shiftAliases", JSON.stringify(
+            currentMember ? getShiftAliases(currentMember.id) : SHIFT_ALIAS_UTILS.defaultAliasConfig()
+          ));
 
           const result = await _streamOcr(formData);
           const rows = result.rows ?? [];
@@ -1952,6 +2189,7 @@
           }
 
           _ocrAllRows = result;
+          saveDutyRoster(result);
 
           // 드롭다운에 이름 채우기
           const sel = dom.ocrRowSelect;
@@ -2014,6 +2252,8 @@
         renderCalendar();
         renderSelected();
         renderStats();
+        renderShiftAliasSettings();
+        renderShiftFlowModal();
         updateStatus();
       }
 
@@ -2148,7 +2388,8 @@
           button.addEventListener("click", () => {
             setSelectedDate(button.dataset.date);
             renderAll();
-            setToast("시작 날짜를 선택했어요.");
+            openShiftFlowModal(button.dataset.date);
+            setToast("근무 흐름을 열었어요.");
           });
         });
       }
@@ -2202,6 +2443,152 @@
         dom.stats.innerHTML = stats.join("");
       }
 
+      function openShiftFlowModal(date) {
+        if (!date || !dom.shiftFlowModal) return;
+        shiftFlowDate = date;
+        renderShiftFlowModal();
+        dom.shiftFlowModal.classList.add("is-open");
+        dom.shiftFlowModal.setAttribute("aria-hidden", "false");
+      }
+
+      function closeShiftFlowModal() {
+        if (!dom.shiftFlowModal) return;
+        shiftFlowDate = null;
+        dom.shiftFlowModal.classList.remove("is-open");
+        dom.shiftFlowModal.setAttribute("aria-hidden", "true");
+      }
+
+      function getOcrDayRoster(date) {
+        const roster = _ocrAllRows ?? _dutyRoster;
+        if (!roster || !roster.rows) return null;
+        const [y, m, d] = date.split("-").map(Number);
+        if (roster.year !== y || roster.month !== m) return null;
+        const dayIndex = d - 1;
+        const workers = roster.rows
+          .map((row) => ({ name: row.name || `${row.rowIndex}번`, shift: Array.isArray(row.shifts) ? row.shifts[dayIndex] : null }))
+          .filter((w) => w.shift && w.shift.toUpperCase() !== "OFF");
+        return workers.length ? workers : null;
+      }
+
+      function renderShiftFlowModal() {
+        if (!dom.shiftFlowModal || !dom.shiftFlowTitle || !dom.shiftFlowSubtitle || !dom.shiftFlowContent) return;
+        const date = shiftFlowDate ?? state.selectedDate;
+        if (!date) {
+          dom.shiftFlowTitle.textContent = "-";
+          dom.shiftFlowSubtitle.textContent = "날짜를 선택해 주세요.";
+          dom.shiftFlowContent.innerHTML = "";
+          return;
+        }
+
+        const active = activeMember();
+        const activeShift = active ? getShift(active.id, date) : null;
+
+        // 인수인계 방향 (날짜를 넘어감):
+        //   Day는 전날 Night에게 인수받고 당일 Evening에게 인계
+        //   Night는 당일 Evening에게 인수받고 다음날 Day에게 인계
+        const HANDOVER_MAP = {
+          day: { prev: { shift: "night", dayOffset: -1 }, next: { shift: "evening", dayOffset: 0 } },
+          evening: { prev: { shift: "day", dayOffset: 0 }, next: { shift: "night", dayOffset: 0 } },
+          night: { prev: { shift: "evening", dayOffset: 0 }, next: { shift: "day", dayOffset: 1 } },
+        };
+        const handover = activeShift ? HANDOVER_MAP[activeShift] : null;
+        const noHandoverNote = activeShift
+          ? `${SHIFT_LABELS[activeShift]}는 인수인계 대상 근무가 아니에요.`
+          : "근무를 입력하면 앞/뒤 교대자를 보여드려요.";
+
+        function offsetLabel(offset) {
+          return offset === -1 ? "전날" : offset === 1 ? "다음날" : "당일";
+        }
+
+        // 팀원 듀티 + OCR 전체 명단에서 해당 날짜·근무의 사람 찾기 (이름 중복 제거)
+        function findWorkersFor(target) {
+          const targetDate = addDays(date, target.dayOffset);
+          const found = visibleMembers()
+            .filter((member) => getShift(member.id, targetDate) === target.shift)
+            .map((member) => ({ name: member.name, memberId: member.id }));
+          const roster = getOcrDayRoster(targetDate);
+          if (roster) {
+            roster.forEach((w) => {
+              const mapped = OCR_TO_SHIFT[w.shift] || w.shift;
+              if (mapped === target.shift && !found.some((f) => f.name === w.name)) {
+                found.push({ name: w.name, memberId: null });
+              }
+            });
+          }
+          return { targetDate, workers: found };
+        }
+
+        function handoverCardHtml(title, target, withNextDuty) {
+          if (!target) {
+            return `<section class="shift-flow-card"><h4>${title}</h4><p>${escapeHtml(noHandoverNote)}</p></section>`;
+          }
+          const { targetDate, workers } = findWorkersFor(target);
+          const when = `${offsetLabel(target.dayOffset)} ${SHIFT_LABELS[target.shift]}`;
+          const body = workers.length
+            ? `<div class="shift-flow-list">${workers.map((w) => {
+                let small = escapeHtml(when);
+                if (withNextDuty && w.memberId) {
+                  const nextDuty = findNextWorkDate(w.memberId, targetDate);
+                  small += nextDuty ? ` · ${escapeHtml(formatFullDate(nextDuty))} 재근무` : " · 다음 근무 없음";
+                }
+                return `<span class="shift-flow-pill">${escapeHtml(w.name)}<small>${small}</small></span>`;
+              }).join("")}</div>`
+            : `<p>${escapeHtml(when)} 근무자 정보가 없어요.</p>`;
+          return `<section class="shift-flow-card"><h4>${title}</h4>${body}</section>`;
+        }
+
+        const ocrRoster = getOcrDayRoster(date);
+        let rosterHtml = "";
+        if (ocrRoster) {
+          const pills = ocrRoster.map(function(w) {
+            const mapped = OCR_TO_SHIFT[w.shift] || w.shift;
+            const label = SHIFT_LABELS[mapped] || w.shift;
+            return "<span class=\"shift-flow-pill\">" + escapeHtml(w.name) + "<small>" + escapeHtml(label) + "</small></span>";
+          }).join("");
+          rosterHtml = "<section class=\"shift-flow-card\"><h4>오늘 전체 근무 (표 기준)</h4><div class=\"shift-flow-list\">" + pills + "</div></section>";
+        }
+
+        dom.shiftFlowTitle.textContent = formatFullDate(date);
+        dom.shiftFlowSubtitle.textContent = active
+          ? `${active.name} · ${activeShift ? SHIFT_LABELS[activeShift] : "미입력"}`
+          : "선택된 팀원이 없습니다.";
+
+        dom.shiftFlowContent.innerHTML = [
+          rosterHtml,
+          `
+            <section class="shift-flow-card">
+              <h4>선택한 근무</h4>
+              <p>${active ? escapeHtml(active.name) : "팀원 없음"}${activeShift ? ` · ${escapeHtml(SHIFT_LABELS[activeShift])}` : " · 미입력"}</p>
+            </section>
+          `,
+          handoverCardHtml("앞 교대자 (인수받는 사람)", handover ? handover.prev : null, false),
+          handoverCardHtml("뒷 교대자 (인계할 사람)", handover ? handover.next : null, true),
+        ].join("");
+      }
+
+      function diffDays(fromDate, toDate) {
+        const start = parseIsoDate(fromDate);
+        const end = parseIsoDate(toDate);
+        if (!start || !end) return null;
+        const delta = end.getTime() - start.getTime();
+        return Math.max(0, Math.round(delta / (24 * 60 * 60 * 1000)));
+      }
+
+      function findNextWorkDate(memberId, fromDate) {
+        const bucket = getBucket(memberId);
+        const start = parseIsoDate(fromDate);
+        if (!start) return null;
+        const dates = Object.keys(bucket).sort();
+        for (const date of dates) {
+          const parsed = parseIsoDate(date);
+          if (!parsed || parsed <= start) continue;
+          if (WORK_SHIFT_ORDER.includes(bucket[date])) {
+            return date;
+          }
+        }
+        return null;
+      }
+
       function clearAllShifts() {
         const member = activeMember();
         if (!member) {
@@ -2246,9 +2633,13 @@
 
         state.members = state.members.filter((item) => item.id !== memberId);
         delete state.shiftsByMember[memberId];
+        delete state.shiftAliasesByMember[memberId];
 
         if (state.activeMemberId === memberId) {
           state.activeMemberId = state.members[0]?.id ?? null;
+        }
+        if (state.shiftAliasMemberId === memberId) {
+          state.shiftAliasMemberId = state.members[0]?.id ?? null;
         }
 
         if (state.members.length === 0) {
@@ -2302,6 +2693,77 @@
 
       function activeMember() {
         return state.members.find((member) => member.id === state.activeMemberId) ?? state.members[0] ?? null;
+      }
+
+      function aliasEditingMember() {
+        return state.members.find((member) => member.id === state.shiftAliasMemberId)
+          ?? activeMember()
+          ?? state.members[0]
+          ?? null;
+      }
+
+      function getShiftAliases(memberId) {
+        if (!memberId) return SHIFT_ALIAS_UTILS.defaultAliasConfig();
+        const raw = state.shiftAliasesByMember?.[memberId];
+        const normalized = SHIFT_ALIAS_UTILS.normalizeAliasConfig(raw);
+        state.shiftAliasesByMember[memberId] = normalized;
+        return normalized;
+      }
+
+      function setShiftAliases(memberId, shiftKey, inputValue) {
+        const config = getShiftAliases(memberId);
+        config[shiftKey] = SHIFT_ALIAS_UTILS.parseAliasInput(inputValue);
+        state.shiftAliasesByMember[memberId] = SHIFT_ALIAS_UTILS.normalizeAliasConfig(config);
+      }
+
+      function renderShiftAliasSettings() {
+        if (!dom.shiftAliasMembers || !dom.shiftAliasEditor) return;
+        if (!state.members.length) {
+          dom.shiftAliasMembers.innerHTML = "";
+          dom.shiftAliasEditor.innerHTML = '<div class="empty">멤버를 추가하면 근무 문자열을 저장할 수 있어요.</div>';
+          return;
+        }
+
+        const editingMember = aliasEditingMember();
+        if (!editingMember) return;
+        state.shiftAliasMemberId = editingMember.id;
+
+        dom.shiftAliasMembers.innerHTML = state.members.map((member) => `
+          <button class="alias-member-card${member.id === editingMember.id ? " is-active" : ""}" data-alias-member-id="${member.id}">
+            <strong>${escapeHtml(member.name)}</strong>
+            <span>${member.id === editingMember.id ? "지금 수정 중" : "카드를 눌러 수정"}</span>
+          </button>
+        `).join("");
+
+        const aliases = getShiftAliases(editingMember.id);
+        dom.shiftAliasEditor.innerHTML = SHIFT_ORDER.map((shiftKey) => `
+          <div class="alias-row">
+            <label for="alias-${shiftKey}">${escapeHtml(SHIFT_LABELS[shiftKey])}</label>
+            <input
+              id="alias-${shiftKey}"
+              class="field"
+              data-alias-shift="${shiftKey}"
+              placeholder="쉼표로 구분해서 입력"
+              value="${escapeHtml(aliases[shiftKey].join(", "))}"
+            />
+          </div>
+        `).join("") + '<div class="subtle">예: `D, 데이`처럼 쉼표로 구분해서 입력해 두면 돼요.</div>';
+
+        dom.shiftAliasMembers.querySelectorAll("[data-alias-member-id]").forEach((button) => {
+          button.addEventListener("click", () => {
+            state.shiftAliasMemberId = button.dataset.aliasMemberId;
+            renderAll();
+          });
+        });
+
+        dom.shiftAliasEditor.querySelectorAll("[data-alias-shift]").forEach((input) => {
+          input.addEventListener("change", () => {
+            setShiftAliases(editingMember.id, input.dataset.aliasShift, input.value);
+            saveState();
+            renderShiftAliasSettings();
+            setToast("근무 문자열을 저장했어요.");
+          });
+        });
       }
 
       function visibleMembers() {
@@ -2361,6 +2823,8 @@
           currentYear: now.getFullYear(),
           selectedDate: isoDate(new Date(now.getFullYear(), now.getMonth(), now.getDate())),
           shiftsByMember: {},
+          shiftAliasesByMember: {},
+          shiftAliasMemberId: null,
         };
         const next = { ...fallback, ...(candidate && typeof candidate === "object" ? candidate : {}) };
         next.members = Array.isArray(next.members)
@@ -2373,6 +2837,7 @@
               .slice(0, MAX_MEMBERS)
           : [];
         next.shiftsByMember = isPlainObject(next.shiftsByMember) ? next.shiftsByMember : {};
+        next.shiftAliasesByMember = isPlainObject(next.shiftAliasesByMember) ? next.shiftAliasesByMember : {};
         next.currentMonth = clampMonth(next.currentMonth);
         next.currentYear = clampYear(next.currentYear);
         if (next.selectedDate && !parseIsoDate(next.selectedDate)) {
@@ -2381,6 +2846,12 @@
         if (next.activeMemberId && !next.members.some((member) => member.id === next.activeMemberId)) {
           next.activeMemberId = next.members[0]?.id ?? null;
         }
+        if (next.shiftAliasMemberId && !next.members.some((member) => member.id === next.shiftAliasMemberId)) {
+          next.shiftAliasMemberId = next.members[0]?.id ?? null;
+        }
+        Object.keys(next.shiftAliasesByMember).forEach((memberId) => {
+          next.shiftAliasesByMember[memberId] = SHIFT_ALIAS_UTILS.normalizeAliasConfig(next.shiftAliasesByMember[memberId]);
+        });
         return next;
       }
 

@@ -13,6 +13,7 @@ from flask_cors import CORS
 from werkzeug.exceptions import RequestEntityTooLarge
 
 from ocr import parse_duty_image_bytes, parse_duty_image_with_claude, parse_duty_image_with_google
+from ocr.request_params import parse_ocr_request_context
 from ocr.training_store import save_sample as save_training_sample
 
 load_dotenv()
@@ -45,7 +46,6 @@ def _check_token() -> tuple | None:
 def _sse(type_: str, **kwargs) -> str:
     return f"data: {json.dumps({'type': type_, **kwargs}, ensure_ascii=False)}\n\n"
 
-
 @app.errorhandler(RequestEntityTooLarge)
 def _too_large(_e: RequestEntityTooLarge):
     return jsonify({"error": f"파일 크기가 {MAX_UPLOAD_MB}MB를 초과했습니다."}), 413
@@ -62,11 +62,15 @@ def serve_ics():
     data = request.args.get("d", "")
     if not data:
         return jsonify({"error": "데이터 없음"}), 400
+    if len(data) > 100_000:  # 한 달치 ICS는 base64로도 수만 자 수준
+        return jsonify({"error": "데이터가 너무 큽니다"}), 413
     padded = data.replace("-", "+").replace("_", "/")
     padded += "=" * (4 - len(padded) % 4)
     try:
         ics_content = base64.b64decode(padded).decode("utf-8")
     except Exception:
+        return jsonify({"error": "잘못된 데이터"}), 400
+    if not ics_content.lstrip().startswith("BEGIN:VCALENDAR"):
         return jsonify({"error": "잘못된 데이터"}), 400
     return Response(
         ics_content,
@@ -115,27 +119,10 @@ def parse_duty():
     payload = upload.read()
     filename = upload.filename
 
-    row_index = None
-    raw_row = request.form.get("rowIndex")
-    if raw_row is not None:
-        try:
-            row_index = max(1, min(16, int(raw_row)))
-        except (TypeError, ValueError):
-            pass
-
-    year = month = None
-    try:
-        raw_year = request.form.get("year")
-        if raw_year:
-            year = max(2020, min(2099, int(raw_year)))
-    except (TypeError, ValueError):
-        pass
-    try:
-        raw_month = request.form.get("month")
-        if raw_month:
-            month = max(1, min(12, int(raw_month)))
-    except (TypeError, ValueError):
-        pass
+    ocr_context = parse_ocr_request_context(request.form)
+    row_index = ocr_context["row_index"]
+    year = ocr_context["year"]
+    month = ocr_context["month"]
 
     mode = request.form.get("mode", "claude").lower()
     if mode not in {"claude", "google", "tesseract"}:
@@ -152,6 +139,7 @@ def parse_duty():
                 pass
         if parsed:
             refine_row_indices = sorted(set(parsed))
+    shift_aliases = ocr_context["shift_aliases"]
 
     def generate():
         q: queue.Queue = queue.Queue()
@@ -168,6 +156,7 @@ def parse_duty():
                         payload, filename,
                         row_index=row_index,
                         year=year, month=month,
+                        shift_aliases=shift_aliases,
                         refine_row_indices=refine_row_indices,
                         on_progress=on_progress,
                         on_training_data=save_training_sample,
