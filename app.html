@@ -2225,6 +2225,18 @@
 
         const { year, month } = _ocrAllRows;
         const daysInMonth = new Date(year, month, 0).getDate();
+
+        // 사람을 바꿔 다시 가져와도 이전 사람의 듀티가 남지 않게, 해당 연월을 먼저 비운다
+        const bucket = getBucket(member.id);
+        const monthPrefix = `${year}-${String(month).padStart(2, "0")}-`;
+        Object.keys(bucket).forEach((key) => {
+          if (key.startsWith(monthPrefix)) delete bucket[key];
+        });
+
+        // 이 팀원이 근무표의 어느 행(실명)인지 기억 — 근무 흐름 모달의 본인 제외/중복 제거에 사용
+        member.rosterRowIndex = row.rowIndex;
+        member.rosterName = row.name || `${row.rowIndex}번`;
+
         let applied = 0;
         row.shifts.forEach((shift, index) => {
           if (!shift) return;
@@ -2500,22 +2512,37 @@
           return offset === -1 ? "전날" : offset === 1 ? "다음날" : "당일";
         }
 
-        // 팀원 듀티 + OCR 전체 명단에서 해당 날짜·근무의 사람 찾기 (이름 중복 제거)
+        // 본인 판별: 가져오기 때 저장한 근무표 실명(rosterName)이 있으면 정확히 그걸로,
+        // 없으면 이름 포함 관계로 추정 (팀원명 "주희" vs 표 실명 "김주희")
+        function isSelfWorker(w) {
+          if (!active) return false;
+          if (w.memberId === active.id) return true;
+          if (active.rosterName) return w.name === active.rosterName;
+          const myName = active.name;
+          return !!(myName && (w.name === myName || w.name.includes(myName) || myName.includes(w.name)));
+        }
+
+        // 팀원 듀티 + OCR 전체 명단에서 해당 날짜·근무의 사람 찾기 (본인 제외, 이름 중복 제거)
         function findWorkersFor(target) {
           const targetDate = addDays(date, target.dayOffset);
-          const found = visibleMembers()
+          const members = visibleMembers();
+          const found = members
             .filter((member) => getShift(member.id, targetDate) === target.shift)
             .map((member) => ({ name: member.name, memberId: member.id }));
           const roster = getOcrDayRoster(targetDate);
           if (roster) {
             roster.forEach((w) => {
               const mapped = OCR_TO_SHIFT[w.shift] || w.shift;
-              if (mapped === target.shift && !found.some((f) => f.name === w.name)) {
+              if (mapped !== target.shift) return;
+              // 이 실명이 이미 팀원 카드로 표시되는 사람이면 중복 추가하지 않는다
+              const linked = members.find((m) => m.rosterName === w.name);
+              if (linked && found.some((f) => f.memberId === linked.id)) return;
+              if (!found.some((f) => f.name === w.name)) {
                 found.push({ name: w.name, memberId: null });
               }
             });
           }
-          return { targetDate, workers: found };
+          return { targetDate, workers: found.filter((w) => !isSelfWorker(w)) };
         }
 
         function handoverCardHtml(title, target, withNextDuty) {
@@ -2542,15 +2569,10 @@
           ? `${active.name} · ${activeShift ? SHIFT_LABELS[activeShift] : "미입력"}`
           : "선택된 팀원이 없습니다.";
 
-        // 같이 근무: 같은 날 같은 시간대 근무자 (본인 제외)
+        // 같이 근무: 같은 날 같은 시간대 근무자 (본인 제외 — findWorkersFor에서 처리)
         let togetherHtml = "";
         if (activeShift && !["off", "annual"].includes(activeShift)) {
-          const { workers } = findWorkersFor({ shift: activeShift, dayOffset: 0 });
-          const myName = active ? active.name : "";
-          // 팀원명("주희")과 표 실명("김주희")이 달라도 본인은 빼기
-          const others = workers.filter((w) =>
-            !(myName && (w.name === myName || w.name.includes(myName) || myName.includes(w.name)))
-          );
+          const { workers: others } = findWorkersFor({ shift: activeShift, dayOffset: 0 });
           togetherHtml = `
             <section class="shift-flow-card">
               <h4>같이 근무하는 사람 (${escapeHtml(SHIFT_LABELS[activeShift])})</h4>
