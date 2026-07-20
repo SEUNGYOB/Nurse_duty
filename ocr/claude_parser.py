@@ -337,8 +337,14 @@ Your task:
 6. If a cell is illegible, return null for that specific cell only (do not null out the whole row).
 7. Do not guess or infer from neighboring cells or scheduling patterns.
 
-Nurses (in this exact order):
+Nurses (reference roster from a previous month, in row order):
 {names_blob}
+
+- The roster above is only a reference to help you read difficult handwriting.
+- Always read each row's name from the image itself. The roster may be outdated:
+  staff may have joined or left, so a row's actual name may not appear in the roster.
+- If a name in the image is not in the roster, return the name exactly as written
+  in the image. NEVER replace it with a roster name.
 
 Return ONLY valid JSON with this exact shape (no commentary, no markdown):
 {{
@@ -652,6 +658,11 @@ def is_model_not_found_error(detail: str) -> bool:
     return isinstance(error, dict) and error.get("type") == "not_found_error"
 
 
+def is_temperature_deprecated_error(detail: str) -> bool:
+    lowered = detail.lower()
+    return "temperature" in lowered and "deprecated" in lowered
+
+
 def send_claude_request_with_model_fallbacks(payload: dict, ssl_context: ssl.SSLContext) -> tuple[dict, str]:
     last_error: RuntimeError | None = None
     candidates = resolve_anthropic_model_candidates()
@@ -666,6 +677,14 @@ def send_claude_request_with_model_fallbacks(payload: dict, ssl_context: ssl.SSL
             if "Claude API request failed:" not in message:
                 raise
             detail = message.split("Claude API request failed:", 1)[1].strip()
+            if is_temperature_deprecated_error(detail) and "temperature" in attempt_payload:
+                # 최신 모델(sonnet-5+)은 temperature 미지원 + thinking 기본 ON.
+                # thinking이 max_tokens를 소모해 응답 텍스트가 비는 것을 막기 위해 명시적으로 끈다.
+                retry_payload = {k: v for k, v in attempt_payload.items() if k != "temperature"}
+                retry_payload["thinking"] = {"type": "disabled"}
+                response_json = send_claude_request(retry_payload, ssl_context)
+                LOGGER.warning("Anthropic OCR selected model=%s (temperature omitted)", model)
+                return response_json, model
             if not is_model_not_found_error(detail):
                 raise
             last_error = error
@@ -851,6 +870,8 @@ def parse_duty_image_with_claude(
             refine_usage = refine_response.get("usage", {}) if refine_response else {}
             total_input_tokens  += int(refine_usage.get("input_tokens", 0))
             total_output_tokens += int(refine_usage.get("output_tokens", 0))
+            if not refined.get("name") and target_index in by_index:
+                refined["name"] = by_index[target_index]["name"]
             by_index[target_index] = refined
             refine_debug.append(
                 {
