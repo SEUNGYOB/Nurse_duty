@@ -696,6 +696,43 @@ def send_claude_request_with_model_fallbacks(payload: dict, ssl_context: ssl.SSL
     raise RuntimeError("Claude 모델 후보가 없습니다.")
 
 
+def build_flat_row_refine_prompt(
+    row_index: int,
+    *,
+    column_count: int = 30,
+    shift_aliases: dict | None = None,
+) -> str:
+    alias_blob = render_shift_alias_guidance(shift_aliases)
+    return f"""
+You are reading ONE nurse's duty row that has already been isolated and flattened.
+
+The attached image has TWO stacked horizontal strips, both dewarped (flattened):
+- TOP strip: the day-number header, showing day numbers 1 through {column_count}.
+- BOTTOM strip: exactly ONE nurse's duty row for the same days.
+
+Align each duty cell in the bottom strip to the day number directly above it in the
+top strip, and return the duty for day 1 through day {column_count} in order.
+
+{alias_blob if alias_blob else ""}
+
+- Annual leave cells (Y) have a GREY/DARK SHADED background. The grey shading itself
+  is the signal — read those as Y, never null.
+- Use the day-number header to anchor alignment; do not skip or double-count a day.
+- Do not infer from scheduling patterns; read what is printed.
+- If a cell is truly illegible, return null for that cell only.
+
+Return ONLY valid JSON:
+{{
+  "rowIndex": {row_index},
+  "shifts": ["D", "E", "OFF", ... exactly {column_count} items]
+}}
+
+Rules:
+- shifts must contain exactly {column_count} items.
+- Valid values are D, E, N, S, Y, OFF, or null.
+""".strip()
+
+
 def request_row_refinement(
     rectified: Image.Image,
     row_box: dict,
@@ -708,29 +745,37 @@ def request_row_refinement(
     ssl_context: ssl.SSLContext,
     shift_lookup: dict[str, str] | None = None,
     shift_aliases: dict | None = None,
+    row_strip: Image.Image | None = None,
 ) -> dict | None:
-    prompt = build_row_refine_prompt(
-        year,
-        month,
-        row_box["rowIndex"],
-        column_count=column_count,
-        shift_aliases=shift_aliases,
-    )
-    focus_crop = crop_row_strip(rectified, row_box, include_header=True)
-    highlight_image = build_row_highlight_image(rectified, row_box)
+    if row_strip is not None:
+        # dewarp된 평평한 단일 행 스트립 경로 (곡선 격자선 기반, 권장)
+        prompt = build_flat_row_refine_prompt(
+            row_box["rowIndex"], column_count=column_count, shift_aliases=shift_aliases
+        )
+        content = [
+            {"type": "text", "text": prompt},
+            build_row_content_block(row_strip, filename, source_format),
+        ]
+    else:
+        # 폴백: 원본 크롭 + 하이라이트 (곡선 검출 실패 시)
+        prompt = build_row_refine_prompt(
+            year,
+            month,
+            row_box["rowIndex"],
+            column_count=column_count,
+            shift_aliases=shift_aliases,
+        )
+        focus_crop = crop_row_strip(rectified, row_box, include_header=True)
+        highlight_image = build_row_highlight_image(rectified, row_box)
+        content = [
+            {"type": "text", "text": prompt},
+            build_row_content_block(highlight_image, filename, source_format),
+            build_row_content_block(focus_crop, filename, source_format),
+        ]
     payload = {
         "max_tokens": 2048,
         "temperature": 0,
-        "messages": [
-            {
-                "role": "user",
-                "content": [
-                    {"type": "text", "text": prompt},
-                    build_row_content_block(highlight_image, filename, source_format),
-                    build_row_content_block(focus_crop, filename, source_format),
-                ],
-            }
-        ],
+        "messages": [{"role": "user", "content": content}],
     }
     response_json, _used_model = send_claude_request_with_model_fallbacks(payload, ssl_context)
     payload_json = extract_json_payload(extract_text_blocks(response_json))
@@ -848,11 +893,35 @@ def parse_duty_image_with_claude(
     if refine_row_indices:
         by_index = {row["rowIndex"]: row for row in rows}
         overlay_by_index = {row["rowIndex"]: row for row in rows_for_overlay}
+        # 곡선 격자선 검출 → 행별 dewarp 스트립 (실패 시 폴백 크롭 사용)
+        try:
+            from .row_dewarp import (
+                detect_horizontal_curves,
+                select_nurse_grid,
+                build_header_stacked_strips,
+                day_x_range,
+            )
+            _curves = detect_horizontal_curves(rectified)
+            _grid = select_nurse_grid(
+                _curves, DEFAULT_TEMPLATE, width=rectified.width, height=rectified.height
+            )
+            _day_L, _day_R = day_x_range(rectified, x_bounds, DEFAULT_TEMPLATE)
+            _norm_strips = build_header_stacked_strips(
+                rectified, _curves, _grid,
+                column_count=column_count,
+                day_left_px=_day_L, day_right_px=_day_R,
+            )
+        except Exception as exc:  # 검출 실패해도 재판독 자체는 폴백으로 진행
+            LOGGER.warning("row curve detection failed, using fallback crop: %s", exc)
+            _norm_strips = None
         for target_index in sorted(set(idx for idx in refine_row_indices if 1 <= idx <= 16)):
             row_box = overlay_by_index.get(target_index)
             if not row_box:
                 continue
             _progress(f"{target_index}번 행 꼼꼼히 확인 중...")
+            row_strip = None
+            if _norm_strips and 1 <= target_index <= len(_norm_strips):
+                row_strip = _norm_strips[target_index - 1]
             refined, refine_response = request_row_refinement(
                 rectified,
                 row_box,
@@ -864,6 +933,7 @@ def parse_duty_image_with_claude(
                 ssl_context=ssl_context,
                 shift_lookup=shift_lookup,
                 shift_aliases=shift_aliases,
+                row_strip=row_strip,
             )
             if refined is None:
                 continue
