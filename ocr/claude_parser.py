@@ -5,8 +5,10 @@ import base64
 import json
 import logging
 import os
+import random
 import re
 import ssl
+import time
 import urllib.error
 import urllib.request
 from functools import lru_cache
@@ -617,31 +619,58 @@ def resolve_anthropic_model_candidates() -> tuple[str, ...]:
     return candidates
 
 
-def send_claude_request(payload: dict, ssl_context: ssl.SSLContext) -> dict:
-    request = urllib.request.Request(
-        ANTHROPIC_API_URL,
-        data=json.dumps(payload).encode("utf-8"),
-        headers={
-            "content-type": "application/json",
-            "x-api-key": os.environ.get("ANTHROPIC_API_KEY", ""),
-            "anthropic-version": "2023-06-01",
-        },
-        method="POST",
-    )
+# Anthropic가 일시적으로 반환하는 상태 코드. 재시도하면 대개 곧 풀린다.
+# 529 overloaded_error, 429 rate limit, 5xx 게이트웨이/일시 장애.
+TRANSIENT_HTTP_STATUS = frozenset({429, 500, 502, 503, 504, 529})
+MAX_TRANSIENT_RETRIES = 3
 
-    try:
-        with urllib.request.urlopen(request, timeout=180, context=ssl_context) as response:
-            return json.loads(response.read().decode("utf-8"))
-    except urllib.error.HTTPError as error:
-        detail = error.read().decode("utf-8", "ignore")
-        raise RuntimeError(f"Claude API request failed: {detail}") from error
-    except urllib.error.URLError as error:
-        if isinstance(error.reason, ssl.SSLCertVerificationError):
-            raise RuntimeError(
-                "Claude API SSL verification failed. Install `certifi` in this project environment "
-                "or run the macOS Python certificate installer, then try again."
-            ) from error
-        raise RuntimeError(f"Claude API connection failed: {error}") from error
+
+def send_claude_request(payload: dict, ssl_context: ssl.SSLContext) -> dict:
+    data = json.dumps(payload).encode("utf-8")
+
+    def _build_request() -> urllib.request.Request:
+        return urllib.request.Request(
+            ANTHROPIC_API_URL,
+            data=data,
+            headers={
+                "content-type": "application/json",
+                "x-api-key": os.environ.get("ANTHROPIC_API_KEY", ""),
+                "anthropic-version": "2023-06-01",
+            },
+            method="POST",
+        )
+
+    attempt = 0
+    while True:
+        try:
+            with urllib.request.urlopen(_build_request(), timeout=180, context=ssl_context) as response:
+                return json.loads(response.read().decode("utf-8"))
+        except urllib.error.HTTPError as error:
+            detail = error.read().decode("utf-8", "ignore")
+            # 과부하·레이트리밋·일시 장애는 지수 백오프로 몇 번 재시도한다.
+            # (Vercel maxDuration 120s 안에 들도록 백오프를 짧게 유지.)
+            if error.code in TRANSIENT_HTTP_STATUS and attempt < MAX_TRANSIENT_RETRIES:
+                backoff = min(2 ** attempt, 6) + random.uniform(0, 0.75)
+                LOGGER.warning(
+                    "Claude API transient %s, retry %d/%d after %.1fs",
+                    error.code, attempt + 1, MAX_TRANSIENT_RETRIES, backoff,
+                )
+                attempt += 1
+                time.sleep(backoff)
+                continue
+            if error.code in TRANSIENT_HTTP_STATUS:
+                # 재시도까지 소진 — 서버측 일시 장애이므로 사용자에게 친절히 안내.
+                raise RuntimeError(
+                    "AI 서버가 잠시 혼잡해요. 잠시 후 다시 시도해 주세요. (Overloaded)"
+                ) from error
+            raise RuntimeError(f"Claude API request failed: {detail}") from error
+        except urllib.error.URLError as error:
+            if isinstance(error.reason, ssl.SSLCertVerificationError):
+                raise RuntimeError(
+                    "Claude API SSL verification failed. Install `certifi` in this project environment "
+                    "or run the macOS Python certificate installer, then try again."
+                ) from error
+            raise RuntimeError(f"Claude API connection failed: {error}") from error
 
 
 def is_model_not_found_error(detail: str) -> bool:
