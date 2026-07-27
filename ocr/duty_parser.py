@@ -161,7 +161,13 @@ def normalize_profile(values: np.ndarray) -> np.ndarray:
     return values / peak
 
 
-def pick_bounds_from_profile(scores: np.ndarray, threshold_ratio: float, minimum_span: int) -> tuple[int, int] | None:
+def pick_bounds_from_profile(
+    scores: np.ndarray,
+    threshold_ratio: float,
+    minimum_span: int,
+    *,
+    select: str = "span",
+) -> tuple[int, int] | None:
     if scores.size == 0 or float(scores.max()) <= 0:
         return None
     indices = np.where(scores > float(scores.max()) * threshold_ratio)[0]
@@ -169,6 +175,13 @@ def pick_bounds_from_profile(scores: np.ndarray, threshold_ratio: float, minimum
     runs = [run for run in runs if run[1] - run[0] + 1 >= minimum_span]
     if not runs:
         return None
+    if select == "largest":
+        # 사진에 근무표 말고 다른 표(교육표 등)가 같이 찍히면 세로 방향으로
+        # 여러 개의 밀집 구간이 잡힌다. 첫~마지막을 감싸면 딴 표까지 삼키므로,
+        # 가장 긴 구간(=진짜 근무표)만 고른다. 단일 표(6월/7월)는 구간이 하나라
+        # 결과가 기존과 동일하다.
+        biggest = max(runs, key=lambda run: run[1] - run[0])
+        return biggest[0], biggest[1]
     return runs[0][0], runs[-1][1]
 
 
@@ -193,7 +206,7 @@ def detect_table_box(image: Image.Image) -> tuple[int, int, int, int]:
     row_scores = ndimage.uniform_filter1d(horizontal.mean(axis=1), size=31)
     col_scores = ndimage.uniform_filter1d(vertical.mean(axis=0), size=31)
 
-    row_bounds = pick_bounds_from_profile(row_scores, threshold_ratio=0.18, minimum_span=12)
+    row_bounds = pick_bounds_from_profile(row_scores, threshold_ratio=0.18, minimum_span=12, select="largest")
     col_bounds = pick_bounds_from_profile(col_scores, threshold_ratio=0.10, minimum_span=12)
 
     if row_bounds is None or col_bounds is None:
