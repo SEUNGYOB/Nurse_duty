@@ -284,18 +284,40 @@ def score_left_label_layout(image: Image.Image, table_box: tuple[int, int, int, 
     return right_density - left_density
 
 
+ORIENT_SCORE_MAX_WIDTH = 1600
+
+
+def _downscale_for_orientation(image: Image.Image, max_width: int = ORIENT_SCORE_MAX_WIDTH) -> Image.Image:
+    if image.width <= max_width:
+        return image
+    scale = max_width / image.width
+    return image.resize((max_width, max(1, round(image.height * scale))), Image.Resampling.BILINEAR)
+
+
 def auto_orient_duty_image(image: Image.Image) -> tuple[Image.Image, int]:
-    best_image = image
+    # cardinal 방향(0/90/270) 판정만 축소본으로 한다. detect_table_box의 모폴로지
+    # 비용이 픽셀 수에 비례해 풀해상도로 여러 번 도는 것은 낭비이고, 이 판정은
+    # coverage/aspect/centered 같은 coarse 속성이라 축소본에서 동일하게 나온다
+    # (회전 샘플 90/180/270/±5/±10 전부 일치 확인). 회전은 무손실이라 결정된
+    # 각도만 풀해상도에 그대로 적용한다.
+    #
+    # 단 180-flip 판정(score_left_label_layout)은 축소에 민감하다: 근무표 외
+    # 다른 표가 섞인 사진에서 좌우 세로선 밀도 차가 임계(+0.01) 근처라, 축소하면
+    # 위/아래가 뒤집혀 판정되는 회귀가 있었다. 그래서 flip 판정은 풀해상도 정방향
+    # 이미지에서 원본 로직 그대로 수행한다.
+    small = _downscale_for_orientation(image)
+
     best_rotation = 0
-    best_score, _ = score_table_orientation(image)
+    best_score, _ = score_table_orientation(small)
 
     for rotation in (90, 270):
-        rotated = image.rotate(rotation, expand=True)
+        rotated = small.rotate(rotation, expand=True)
         score, _ = score_table_orientation(rotated)
         if score > best_score + 0.05:
-            best_image = rotated
             best_rotation = rotation
             best_score = score
+
+    best_image = image if best_rotation == 0 else image.rotate(best_rotation, expand=True)
 
     best_table_box = detect_table_box(best_image)
     upright_layout = score_left_label_layout(best_image, best_table_box)
