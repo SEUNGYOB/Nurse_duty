@@ -294,7 +294,7 @@ def _downscale_for_orientation(image: Image.Image, max_width: int = ORIENT_SCORE
     return image.resize((max_width, max(1, round(image.height * scale))), Image.Resampling.BILINEAR)
 
 
-def auto_orient_duty_image(image: Image.Image) -> tuple[Image.Image, int]:
+def auto_orient_duty_image(image: Image.Image) -> tuple[Image.Image, int, tuple[int, int, int, int]]:
     # cardinal 방향(0/90/270) 판정만 축소본으로 한다. detect_table_box의 모폴로지
     # 비용이 픽셀 수에 비례해 풀해상도로 여러 번 도는 것은 낭비이고, 이 판정은
     # coverage/aspect/centered 같은 coarse 속성이라 축소본에서 동일하게 나온다
@@ -327,8 +327,11 @@ def auto_orient_duty_image(image: Image.Image) -> tuple[Image.Image, int]:
     if flipped_layout > upright_layout + 0.01:
         best_image = flipped_image
         best_rotation = (best_rotation + 180) % 360
+        best_table_box = flipped_table_box
 
-    return best_image, best_rotation
+    # 최종 방향의 table_box를 함께 반환한다. 호출부가 곧바로 detect_table_box를
+    # 다시 부르던 중복(풀해상도 모폴로지 ~0.6~1.5s)을 제거하기 위함.
+    return best_image, best_rotation, best_table_box
 
 
 def rectify_table(image: Image.Image, table_box: tuple[int, int, int, int], output_size: tuple[int, int]) -> Image.Image:
@@ -995,10 +998,9 @@ def parse_duty_image_bytes(
     include_debug: bool = False,
 ) -> dict:
     image = load_image_rgb(image_bytes)
-    image, rotation_applied = auto_orient_duty_image(image)
+    image, rotation_applied, table_box = auto_orient_duty_image(image)
     year, month = guess_month_and_year(filename)
 
-    table_box = detect_table_box(image)
     rectified = rectify_table(image, table_box, DEFAULT_TEMPLATE.table_size)
     rows = build_schedule_boxes(DEFAULT_TEMPLATE)
     target_rows = [item for item in rows if row_index is None or item["rowIndex"] == row_index]

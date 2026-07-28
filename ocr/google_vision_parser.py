@@ -136,10 +136,9 @@ def parse_duty_image_with_google(
     import io
 
     image = load_image_rgb(image_bytes)
-    image, rotation_applied = auto_orient_duty_image(image)
+    image, rotation_applied, table_box = auto_orient_duty_image(image)
     year, month = guess_month_and_year(filename)
 
-    table_box = detect_table_box(image)
     rectified = rectify_table(image, table_box, DEFAULT_TEMPLATE.table_size)
     _, y_bounds, x_bounds = detect_schedule_line_bounds(rectified, DEFAULT_TEMPLATE)
     rows = build_schedule_boxes_from_bounds(DEFAULT_TEMPLATE, y_bounds, x_bounds)
