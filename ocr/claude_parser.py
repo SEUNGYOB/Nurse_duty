@@ -817,40 +817,47 @@ def parse_duty_image_with_claude(
     table_crop = crop_table_for_claude(image, table_box)
     ssl_context = build_ssl_context()
 
-    content: list[dict] = [{
-        "type": "text",
-        "text": build_prompt(
-            year,
-            month,
-            column_count=column_count,
-            with_row_guides=use_row_guides,
-            shift_aliases=shift_aliases,
-        ),
-    }]
-    content.append({
+    # 이미지는 한 번만 base64로 인코딩해 두고, 재요청 시 그대로 재사용한다.
+    image_content: list[dict] = [{
         "type": "image",
         "source": {"type": "base64", "media_type": "image/jpeg", "data": pil_to_base64(table_crop, "JPEG")},
-    })
+    }]
     if use_row_guides:
         annotated = annotate_row_boundaries(rectified, y_bounds, DEFAULT_TEMPLATE, max_width=guide_image_width)
-        content.append({
+        image_content.append({
             "type": "image",
             "source": {"type": "base64", "media_type": "image/jpeg", "data": pil_to_base64(annotated, "JPEG")},
         })
 
-    payload = {
-        "max_tokens": 4096,
-        "temperature": 0,
-        "messages": [{"role": "user", "content": content}],
-    }
+    def _run_claude(prompt_year: int, prompt_month: int, prompt_column_count: int):
+        content = [
+            {
+                "type": "text",
+                "text": build_prompt(
+                    prompt_year,
+                    prompt_month,
+                    column_count=prompt_column_count,
+                    with_row_guides=use_row_guides,
+                    shift_aliases=shift_aliases,
+                ),
+            },
+            *image_content,
+        ]
+        payload = {
+            "max_tokens": 4096,
+            "temperature": 0,
+            "messages": [{"role": "user", "content": content}],
+        }
+        response_json, used = send_claude_request_with_model_fallbacks(payload, ssl_context)
+        usage = response_json.get("usage", {})
+        parsed = extract_json_payload(extract_text_blocks(response_json))
+        return parsed, used, int(usage.get("input_tokens", 0)), int(usage.get("output_tokens", 0))
 
     _progress("AI가 듀티 보는 중... 잠깐만요")
-    response_json, used_model = send_claude_request_with_model_fallbacks(payload, ssl_context)
-    usage = response_json.get("usage", {})
-    total_input_tokens  = int(usage.get("input_tokens", 0))
-    total_output_tokens = int(usage.get("output_tokens", 0))
-    response_text = extract_text_blocks(response_json)
-    parsed_payload = extract_json_payload(response_text)
+    requested_column_count = column_count
+    parsed_payload, used_model, total_input_tokens, total_output_tokens = _run_claude(
+        year, month, requested_column_count
+    )
 
     # Claude가 이미지 제목에서 연월을 직접 읽었으면 그 값을 사용
     try:
@@ -866,6 +873,21 @@ def parse_duty_image_with_claude(
     except (TypeError, ValueError):
         pass
     column_count = days_in_month(year, month)
+
+    # 힌트 월(프론트 드롭다운)로 정한 칸수가 실제 월의 일수와 다르면(예: 힌트 6월=30일,
+    # 실제 8월=31일) Claude가 프롬프트 지시대로 마지막 날(31일)을 통째로 빠뜨린다.
+    # 감지된 월의 올바른 칸수로 1회 재요청해 유실을 막는다. 힌트가 맞으면(대부분)
+    # 이 분기는 실행되지 않아 기존 동작·비용과 동일하다.
+    if column_count != requested_column_count:
+        _progress("월을 다시 확인해 재판독 중...")
+        try:
+            reparsed, used_model, in_tok, out_tok = _run_claude(year, month, column_count)
+            total_input_tokens += in_tok
+            total_output_tokens += out_tok
+            if isinstance(reparsed, dict) and reparsed.get("rows"):
+                parsed_payload = reparsed
+        except Exception as exc:  # 재요청 실패 시 첫 응답으로 폴백(패딩됨)
+            LOGGER.warning("column-count re-request failed, keeping first parse: %s", exc)
 
     rows = normalize_rows(
         parsed_payload,
