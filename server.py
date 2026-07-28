@@ -4,6 +4,7 @@ from __future__ import annotations
 import json
 import os
 import queue
+import sys
 import threading
 from pathlib import Path
 
@@ -45,6 +46,19 @@ def _check_token() -> tuple | None:
 
 def _sse(type_: str, **kwargs) -> str:
     return f"data: {json.dumps({'type': type_, **kwargs}, ensure_ascii=False)}\n\n"
+
+
+# 사용자에게 노출해도 되는(다듬어진, 행동 가능한) 안내의 표식. 그 외 예외는 감춘다.
+_SAFE_ERROR_HINTS = ("혼잡",)
+_GENERIC_ERROR = "근무표를 인식하지 못했어요. 잠시 후 다시 시도해 주세요."
+
+
+def _friendly_error(exc: Exception) -> str:
+    raw = str(exc)
+    print(f"[parse-duty] OCR error: {exc!r}", file=sys.stderr)
+    if any(hint in raw for hint in _SAFE_ERROR_HINTS):
+        return raw
+    return _GENERIC_ERROR
 
 @app.errorhandler(RequestEntityTooLarge)
 def _too_large(_e: RequestEntityTooLarge):
@@ -166,7 +180,7 @@ def parse_duty():
                 result["mode"] = mode
                 q.put(("result", result))
             except Exception as exc:
-                q.put(("error", str(exc)))
+                q.put(("error", _friendly_error(exc)))
 
         threading.Thread(target=run, daemon=True).start()
 

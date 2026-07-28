@@ -26,6 +26,21 @@ def _sse(type_: str, **kwargs) -> str:
     return f"data: {json.dumps({'type': type_, **kwargs}, ensure_ascii=False)}\n\n"
 
 
+# 사용자에게 그대로 보여줘도 되는(이미 다듬어진, 행동 가능한) 안내의 표식.
+# 그 외 모든 예외는 내부 원시 메시지를 감추고 일반 안내로 대체한다.
+_SAFE_ERROR_HINTS = ("혼잡",)  # 예: "AI 서버가 잠시 혼잡해요. 잠시 후 다시 시도해 주세요."
+_GENERIC_ERROR = "근무표를 인식하지 못했어요. 잠시 후 다시 시도해 주세요."
+
+
+def _friendly_error(exc: Exception) -> str:
+    raw = str(exc)
+    # 원시 오류는 서버 로그로만 남기고 사용자에게는 노출하지 않는다.
+    print(f"[parse-duty] OCR error: {exc!r}", file=sys.stderr)
+    if any(hint in raw for hint in _SAFE_ERROR_HINTS):
+        return raw
+    return _GENERIC_ERROR
+
+
 def _is_image(data: bytes) -> bool:
     return (
         data[:3] == b"\xff\xd8\xff"              # JPEG
@@ -98,7 +113,7 @@ def parse_duty():
                 result["mode"] = mode
                 q.put(("result", result))
             except Exception as exc:
-                q.put(("error", str(exc)))
+                q.put(("error", _friendly_error(exc)))
 
         threading.Thread(target=run, daemon=True).start()
 
